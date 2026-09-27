@@ -1,0 +1,3221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SortMate — Campus Waste Segregation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg: #0E1512;
+  --bg-raised: #131B17;
+  --surface: #17211C;
+  --surface-2: #1D2922;
+  --line: #263A2F;
+  --leaf: #5FBF7E;
+  --leaf-dim: #3E8E58;
+  --moss: #2D6A4F;
+  --sage: #A8C5A0;
+  --amber: #D9A441;
+  --rust: #C1633B;
+  --text: #EAF1EA;
+  --text-dim: #9CB0A2;
+  --text-faint: #64796D;
+  --radius: 10px;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body{
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  line-height: 1.5;
+}
+h1,h2,h3,.display{
+  font-family: 'Fraunces', serif;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.mono{ font-family: 'IBM Plex Mono', monospace; }
+
+/* ---------- Layout shells ---------- */
+#app{ min-height: 100vh; display:flex; flex-direction:column; }
+
+.screen{ display:none; }
+.screen.active{ display:block; }
+
+/* ---------- Login ---------- */
+#login-screen.active{
+  display:flex;
+  min-height: 100vh;
+  align-items:center;
+  justify-content:center;
+  background:
+    radial-gradient(ellipse 900px 500px at 15% -10%, rgba(95,191,126,0.14), transparent 60%),
+    radial-gradient(ellipse 700px 500px at 100% 110%, rgba(45,106,79,0.18), transparent 60%),
+    var(--bg);
+  padding: 24px;
+}
+.login-wrap{
+  width:100%;
+  max-width: 920px;
+  display:grid;
+  grid-template-columns: 1.1fr 1fr;
+  border:1px solid var(--line);
+  border-radius: 14px;
+  overflow:hidden;
+  background: var(--bg-raised);
+}
+.login-hero{
+  padding: 52px 44px;
+  background: linear-gradient(165deg, #142019 0%, #0F1713 100%);
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  position:relative;
+}
+.login-hero::after{
+  content:"";
+  position:absolute; inset:0;
+  background-image: radial-gradient(circle, rgba(95,191,126,0.08) 1px, transparent 1px);
+  background-size: 22px 22px;
+  pointer-events:none;
+}
+.brand-mark{
+  display:flex; align-items:center; gap:10px;
+  font-family:'Fraunces', serif; font-size:20px; font-weight:600;
+  position:relative; z-index:1;
+}
+.brand-mark .dot{ width:10px; height:10px; border-radius:50%; background: var(--leaf); }
+.hero-copy{ position:relative; z-index:1; margin-top: 40px;}
+.hero-copy h1{ font-size: 38px; line-height:1.12; max-width: 380px;}
+.hero-copy p{ color: var(--text-dim); margin-top:16px; max-width: 360px; font-size:15px;}
+.hero-stats{ display:flex; gap:28px; margin-top:44px; position:relative; z-index:1;}
+.hero-stats div b{ display:block; font-family:'Fraunces',serif; font-size:26px; color:var(--leaf);}
+.hero-stats div span{ font-size:12px; color:var(--text-faint); }
+
+.login-form{ padding: 52px 44px; display:flex; flex-direction:column; justify-content:center;}
+.login-form h2{ font-size:24px; margin-bottom:6px;}
+.login-form .sub{ color:var(--text-dim); font-size:14px; margin-bottom:28px;}
+.field{ margin-bottom:16px; }
+.field label{ display:block; font-size:12px; color:var(--text-dim); margin-bottom:6px; }
+.field input, .field select{
+  width:100%;
+  background: var(--surface);
+  border:1px solid var(--line);
+  color: var(--text);
+  padding: 11px 13px;
+  border-radius: 8px;
+  font-size:14px;
+  font-family:'Inter',sans-serif;
+}
+.field input:focus, .field select:focus, button:focus-visible, .tab-btn:focus-visible{
+  outline: 2px solid var(--leaf);
+  outline-offset: 1px;
+}
+.btn-primary{
+  width:100%;
+  background: var(--leaf);
+  color: #0A130E;
+  border:none;
+  padding: 12px;
+  border-radius:8px;
+  font-weight:600;
+  font-size:14px;
+  cursor:pointer;
+  margin-top:8px;
+  transition: background .15s ease;
+}
+.btn-primary:hover{ background:#72cf8f; }
+.login-toggle{ margin-top:18px; font-size:13px; color:var(--text-dim); text-align:center;}
+.login-toggle a{ color: var(--leaf); text-decoration:none; cursor:pointer;}
+.hint{ font-size:12px; color:var(--text-faint); margin-top:18px; line-height:1.5; border-top:1px solid var(--line); padding-top:14px;}
+
+/* ---------- Main app shell ---------- */
+#main-screen.active{ display:flex; min-height:100vh;}
+.sidebar{
+  width: 264px;
+  flex-shrink:0;
+  background: var(--bg-raised);
+  border-right:1px solid var(--line);
+  display:flex; flex-direction:column;
+  padding: 22px 16px;
+}
+.sidebar .brand-mark{ padding: 0 4px 20px 4px; }
+.nav-grid{
+  display:grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.nav-item{
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  gap:8px;
+  padding: 18px 8px;
+  border-radius: 12px;
+  color: var(--text-dim);
+  font-size:12px;
+  cursor:pointer;
+  border:1px solid var(--line);
+  background: var(--surface);
+  text-align:center;
+  font-family:'Inter',sans-serif;
+  min-height: 78px;
+  transition: border-color .15s ease, background .15s ease, color .15s ease;
+}
+.nav-item .ic{ font-size:22px; line-height:1; }
+.nav-item:hover{ border-color: var(--leaf-dim); color: var(--text); }
+.nav-item.active{ background: var(--surface-2); color: var(--leaf); font-weight:600; border-color: var(--leaf-dim); }
+.sidebar-foot{ margin-top:auto; padding: 14px 4px 0 4px; border-top:1px solid var(--line); margin-top:20px; }
+.mini-profile{ display:flex; align-items:center; gap:10px; }
+.avatar{
+  width:34px; height:34px; border-radius:50%;
+  background: linear-gradient(145deg, var(--leaf), var(--moss));
+  display:flex; align-items:center; justify-content:center;
+  font-weight:700; font-size:13px; color:#0A130E;
+  flex-shrink:0;
+}
+.mini-profile div p{ font-size:13px; font-weight:600; }
+.mini-profile div span{ font-size:11px; color:var(--text-faint); }
+.logout-link{ font-size:12px; color:var(--text-faint); margin-top:10px; cursor:pointer; display:inline-block;}
+.logout-link:hover{ color: var(--rust); }
+
+.content{ flex:1; padding: 32px 40px; max-width: 1080px;}
+.content-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom: 26px; flex-wrap:wrap; gap:10px;}
+.content-header h1{ font-size:26px; }
+.content-header .page-sub{ font-size:13.5px; color: var(--text-dim); margin-top:4px; }
+.content-header .streak-pill{
+  background: var(--surface);
+  border:1px solid var(--line);
+  padding: 6px 14px;
+  border-radius: 100px;
+  font-size:13px;
+  color: var(--sage);
+}
+
+.tab-panel{ display:none; }
+.tab-panel.active{ display:block; }
+
+/* ---------- Cards / grid ---------- */
+.grid-3{ display:grid; grid-template-columns: repeat(3,1fr); gap:16px; margin-bottom: 22px;}
+.grid-4{ display:grid; grid-template-columns: repeat(4,1fr); gap:16px; margin-bottom: 22px;}
+.stat-card{
+  background: var(--surface);
+  border:1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 18px 20px;
+}
+.stat-card .stat-icon{ font-size:18px; opacity:0.75; margin-bottom:10px; }
+.stat-card .num{ font-family:'Fraunces',serif; font-size:30px; color: var(--leaf); }
+.stat-card .lbl{ font-size:12px; color: var(--text-dim); margin-top:4px;}
+
+/* Dashboard two-column layout */
+.dash-layout{ display:grid; grid-template-columns: 2fr 1fr; gap: 20px; align-items:start; }
+.dash-main{ display:flex; flex-direction:column; gap:0; }
+.dash-side{ display:flex; flex-direction:column; gap:0; }
+.rank-hero{ display:flex; align-items:baseline; gap:10px; margin-bottom:12px; }
+.rank-hero .rn{ font-family:'Fraunces',serif; font-size:34px; color: var(--leaf); }
+.rank-hero .rl{ font-size:12.5px; color: var(--text-dim); }
+.rank-progress{ background: var(--surface-2); border-radius:4px; height:8px; overflow:hidden; margin: 10px 0 8px 0; }
+.rank-progress-fill{ height:100%; background: var(--leaf); }
+.rank-note{ font-size:12px; color: var(--text-faint); }
+.quick-actions{ display:flex; flex-direction:column; gap:10px; }
+.qa-btn{ width:100%; text-align:left; padding:11px 14px; }
+
+/* Phase 3 — AI decision + human verification */
+.ai-decision-panel{margin:12px 0 14px;padding:13px 14px;border:1px solid var(--line);border-radius:9px;background:rgba(95,191,126,0.045)}
+.ai-decision-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px;font-size:12px}
+.ai-source-badge{font-size:10px;padding:4px 8px;border-radius:999px;background:var(--surface-2);color:var(--text-faint);border:1px solid var(--line)}
+.ai-action{font-size:13px;color:var(--leaf);font-weight:600;margin-bottom:5px}
+.ai-explanation{font-size:12px;line-height:1.5;color:var(--text-dim)}
+.human-review-panel{margin:0 0 16px;padding:13px 14px;border:1px solid var(--line);border-radius:9px;background:var(--surface)}
+.human-review-title{font-size:13px;font-weight:700;margin-bottom:4px}
+.human-review-panel p{font-size:12px;color:var(--text-dim);margin:0 0 10px}
+.human-review-actions{display:flex;gap:8px;flex-wrap:wrap}
+.verification-status{margin-top:10px;font-size:11px;color:var(--leaf);padding:7px 9px;border-radius:7px;background:rgba(95,191,126,0.07)}
+.conf-low{color:var(--rust)!important}
+.conf-medium{color:var(--amber)!important}
+@media (max-width: 980px){
+  .dash-layout{ grid-template-columns: 1fr; }
+  .grid-4{ grid-template-columns: repeat(2,1fr); }
+}
+
+.panel{
+  background: var(--surface);
+  border:1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 22px;
+  margin-bottom: 20px;
+}
+.panel h3{ font-size:16px; margin-bottom:14px; }
+
+/* Classify */
+.classify-zone{
+  border: 1.5px dashed var(--line);
+  border-radius: var(--radius);
+  padding: 36px 20px;
+  text-align:center;
+  cursor:pointer;
+  transition: border-color .15s ease, background .15s ease;
+}
+.classify-zone:hover{ border-color: var(--leaf-dim); background: rgba(95,191,126,0.04); }
+.classify-zone .icon{ font-size:34px; margin-bottom:10px; }
+.classify-zone p{ color: var(--text-dim); font-size:14px; }
+.classify-zone .small{ font-size:12px; color: var(--text-faint); margin-top:6px;}
+#photo-input{ display:none; }
+
+.preview-wrap{ display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap;}
+#preview-img{ width:180px; height:180px; object-fit:cover; border-radius:8px; border:1px solid var(--line); }
+.result-box{ flex:1; min-width:240px; }
+.category-tag{
+  display:inline-flex; align-items:center; gap:8px;
+  padding: 7px 14px; border-radius:100px;
+  font-weight:600; font-size:14px; margin-bottom:12px;
+}
+.tag-dry{ background: rgba(95,191,126,0.15); color: var(--leaf); }
+.tag-wet{ background: rgba(217,164,65,0.15); color: var(--amber); }
+.tag-recyclable{ background: rgba(80,150,220,0.15); color: #6FA8DC; }
+.tag-hazardous{ background: rgba(193,99,59,0.18); color: var(--rust); }
+.tag-ewaste{ background: rgba(168,197,160,0.15); color: var(--sage); }
+
+.confidence-row{ display:flex; align-items:center; gap:10px; margin-bottom:16px; font-size:13px; color:var(--text-dim); }
+.conf-bar{ flex:1; height:6px; background: var(--surface-2); border-radius:4px; overflow:hidden; }
+.conf-fill{ height:100%; background: var(--leaf); }
+
+/* AI analysis insights */
+#analyze-btn.analyzing{ opacity:0.75; cursor:default; }
+.spin{ display:inline-block; width:12px; height:12px; border:2px solid rgba(10,19,14,0.35); border-top-color:#0A130E; border-radius:50%; animation:spin .7s linear infinite; margin-right:6px; vertical-align:-1px;}
+@keyframes spin{ to{ transform:rotate(360deg); } }
+
+.insight-grid{ display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; margin-bottom:14px; }
+.insight-card{ background: var(--bg-raised); border:1px solid var(--line); border-radius:8px; padding:11px 12px; }
+.insight-card .il{ font-size:10.5px; color: var(--text-faint); text-transform:uppercase; letter-spacing:0.03em; margin-bottom:4px;}
+.insight-card .iv{ font-family:'Fraunces',serif; font-size:16px; color: var(--leaf); line-height:1.2; }
+.insight-note{ background: rgba(95,191,126,0.06); border:1px solid var(--line); border-radius:8px; padding:11px 13px; font-size:12.5px; color: var(--text-dim); line-height:1.5; margin-bottom:4px; }
+
+.prob-row{ display:flex; align-items:center; gap:10px; margin-bottom:7px; font-size:12px; }
+.prob-row .pl{ width:98px; color: var(--text-dim); flex-shrink:0; }
+.prob-row .pb{ flex:1; background: var(--surface-2); border-radius:4px; height:6px; overflow:hidden; }
+.prob-row .pb-fill{ height:100%; background: var(--leaf-dim); }
+.prob-row.top .pb-fill{ background: var(--leaf); }
+.prob-row.top .pl{ color: var(--text); font-weight:600; }
+.prob-row .pv{ width:34px; text-align:right; color: var(--text-faint); font-family:'IBM Plex Mono',monospace; font-size:11px; }
+
+/* Latest AI scan card (dashboard) */
+.scan-card{ display:flex; gap:14px; align-items:center; }
+.scan-card .sc-icon{ width:48px; height:48px; border-radius:10px; background: var(--bg-raised); display:flex; align-items:center; justify-content:center; font-size:22px; flex-shrink:0; }
+.scan-card .sc-body{ flex:1; }
+.scan-card h4{ font-size:14.5px; margin-bottom:3px; }
+.scan-card p{ font-size:12px; color: var(--text-dim); }
+.scan-metrics{ display:flex; gap:18px; margin-top:10px; padding-top:10px; border-top:1px solid var(--line); }
+.scan-metrics div span{ display:block; font-size:11px; color:var(--text-faint); }
+.scan-metrics div b{ font-family:'Fraunces',serif; font-size:15px; color: var(--leaf); font-weight:600; }
+
+.correction-row{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom: 14px;}
+.chip{
+  background: var(--surface-2);
+  border:1px solid var(--line);
+  color: var(--text-dim);
+  padding: 6px 12px;
+  border-radius: 100px;
+  font-size:12px;
+  cursor:pointer;
+}
+.chip:hover{ border-color: var(--leaf-dim); color: var(--text); }
+.chip.selected{ background: var(--leaf); color:#0A130E; border-color:var(--leaf); font-weight:600;}
+
+.btn-secondary{
+  background: var(--surface-2);
+  border:1px solid var(--line);
+  color: var(--text);
+  padding: 9px 16px;
+  border-radius:8px;
+  font-size:13px;
+  cursor:pointer;
+  font-family:'Inter',sans-serif;
+}
+.btn-secondary:hover{ border-color: var(--leaf-dim); }
+.btn-confirm{ background: var(--leaf); color:#0A130E; border:none; font-weight:600; padding:9px 18px; border-radius:8px; font-size:13px; cursor:pointer;}
+
+/* Log table */
+table{ width:100%; border-collapse:collapse; font-size:13px;}
+th{ text-align:left; color:var(--text-faint); font-weight:500; padding: 8px 10px; border-bottom:1px solid var(--line); font-size:12px;}
+td{ padding: 10px 10px; border-bottom:1px solid var(--line); color: var(--text-dim);}
+tr:last-child td{ border-bottom:none; }
+.pt{ color: var(--leaf); font-weight:600; }
+
+/* Leaderboard */
+.tabs-row{ display:flex; gap:8px; margin-bottom:18px;}
+.tabs-row button{
+  background:var(--surface); border:1px solid var(--line); color:var(--text-dim);
+  padding:7px 14px; border-radius:100px; font-size:13px; cursor:pointer; font-family:'Inter',sans-serif;
+}
+.tabs-row button.active{ background: var(--surface-2); color:var(--leaf); border-color: var(--leaf-dim); font-weight:600;}
+.lb-row{ display:flex; align-items:center; gap:14px; padding: 12px 6px; border-bottom:1px solid var(--line);}
+.lb-row:last-child{ border-bottom:none; }
+.lb-rank{ width:26px; font-family:'Fraunces',serif; color:var(--text-faint); font-size:15px; }
+.lb-row.top .lb-rank{ color: var(--leaf); }
+.lb-row.me{ background: rgba(95,191,126,0.06); border-radius:8px; }
+.lb-name{ flex:1; font-size:14px; }
+.lb-name span{ display:block; font-size:11px; color:var(--text-faint); }
+.lb-pts{ font-family:'Fraunces',serif; color: var(--leaf); font-size:15px;}
+
+/* Chatbot */
+.chat-window{ height: 380px; overflow-y:auto; border:1px solid var(--line); border-radius: var(--radius); padding:16px; background: var(--bg-raised); margin-bottom:14px; display:flex; flex-direction:column; gap:12px;}
+.msg{ max-width:78%; padding:10px 13px; border-radius:10px; font-size:13.5px; line-height:1.5;}
+.msg.bot{ background: var(--surface-2); align-self:flex-start; border-bottom-left-radius:2px;}
+.msg.user{ background: var(--moss); color:#EAF1EA; align-self:flex-end; border-bottom-right-radius:2px;}
+.chat-input-row{ display:flex; gap:10px;}
+.chat-input-row input{ flex:1; background: var(--surface); border:1px solid var(--line); color:var(--text); padding:11px 13px; border-radius:8px; font-size:14px; font-family:'Inter',sans-serif;}
+.suggested-q{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:14px;}
+
+/* Locator */
+.locator-card{ display:flex; gap:14px; padding: 14px; border:1px solid var(--line); border-radius: var(--radius); margin-bottom:12px; align-items:flex-start;}
+.locator-icon{ width:38px; height:38px; border-radius:8px; background: var(--surface-2); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0;}
+.locator-card h4{ font-size:14px; margin-bottom:3px; }
+.locator-card p{ font-size:12.5px; color:var(--text-dim); }
+.locator-card .dist{ margin-left:auto; font-size:12px; color: var(--sage); white-space:nowrap; }
+
+/* Home grid */
+.home-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:18px;}
+.home-tile{
+  background: var(--surface);
+  border:1px solid var(--line);
+  border-radius: 16px;
+  padding: 32px 26px;
+  cursor:pointer;
+  transition: border-color .15s ease, transform .15s ease, background .15s ease;
+  min-height: 190px;
+  display:flex; flex-direction:column; justify-content:space-between;
+}
+.home-tile:hover{ border-color: var(--leaf-dim); background: var(--surface-2); transform: translateY(-3px); }
+.home-tile .ti{ font-size: 38px; }
+.home-tile h4{ font-size:18px; margin-top:18px; font-family:'Fraunces',serif; font-weight:600; }
+.home-tile p{ font-size:13.5px; color:var(--text-dim); margin-top:6px; line-height:1.5; }
+.home-tile .accent{ height:3px; width:30px; background:var(--leaf); border-radius:2px; margin-bottom:14px;}
+
+/* Pickup & Scheduling */
+.pickup-form{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:6px;}
+.pickup-form .field.full{ grid-column: 1 / -1; }
+.status-badge{ padding:4px 11px; border-radius:100px; font-size:11px; font-weight:600; }
+.status-pending{ background: rgba(217,164,65,0.15); color: var(--amber); }
+.status-confirmed{ background: rgba(95,191,126,0.15); color: var(--leaf); }
+.status-completed{ background: rgba(168,197,160,0.15); color: var(--sage); }
+.pickup-row{ display:flex; align-items:center; gap:14px; padding: 13px 6px; border-bottom:1px solid var(--line); }
+.pickup-row:last-child{ border-bottom:none; }
+.pickup-row .pu-info{ flex:1; }
+.pickup-row .pu-info h4{ font-size:13.5px; font-weight:600; }
+.pickup-row .pu-info span{ font-size:12px; color:var(--text-faint); }
+.slot-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:6px;}
+.slot-item{ border:1px solid var(--line); border-radius:8px; padding:12px 8px; text-align:center; background:var(--bg-raised); }
+.slot-item .sd{ font-size:11px; color:var(--text-faint); }
+.slot-item .sn{ font-family:'Fraunces',serif; font-size:16px; color:var(--leaf); margin-top:4px;}
+.slot-item .sc{ font-size:11px; color:var(--text-dim); margin-top:2px;}
+
+/* Sustainability reports */
+.report-header-row{ display:flex; justify-content:space-between; align-items:center; margin-bottom:18px; flex-wrap:wrap; gap:10px;}
+.impact-row{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:20px;}
+.impact-card{ background: linear-gradient(160deg, var(--surface), var(--bg-raised)); border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px;}
+.impact-card .ic-top{ display:flex; justify-content:space-between; align-items:flex-start;}
+.impact-card .num{ font-family:'Fraunces',serif; font-size:26px; color:var(--leaf); }
+.impact-card .lbl{ font-size:11.5px; color:var(--text-dim); margin-top:4px;}
+.impact-card .trend{ font-size:11px; color:var(--sage); }
+
+/* Profile */
+.badges-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px;}
+.badge-item{ text-align:center; padding:16px 8px; border:1px solid var(--line); border-radius:var(--radius); background:var(--bg-raised);}
+.badge-item.locked{ opacity:0.35; }
+.badge-item .bi{ font-size:24px; margin-bottom:8px;}
+.badge-item p{ font-size:11px; color:var(--text-dim);}
+
+.field-row{ display:flex; gap:14px; }
+.field-row .field{ flex:1; }
+
+/* Pickup & Scheduling */
+.slot-grid{ display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; }
+.slot-item{ background: var(--bg-raised); border:1px solid var(--line); border-radius: var(--radius); padding: 14px; text-align:center; }
+.slot-item .sd{ font-size:13px; font-weight:600; margin-bottom:8px; }
+.slot-item .sn{ font-family:'Fraunces',serif; color: var(--leaf); font-size:18px; }
+.slot-item .sc{ font-size:11.5px; color: var(--text-faint); margin-top:2px; }
+.pickup-form{ display:grid; grid-template-columns: 1fr 1fr; gap:14px 16px; margin-bottom:16px;}
+.pickup-form .field.full{ grid-column: 1 / -1; }
+.pickup-request{ display:flex; align-items:center; gap:14px; padding:13px; border:1px solid var(--line); border-radius:var(--radius); margin-bottom:10px; }
+.pickup-request .pr-icon{ width:36px; height:36px; border-radius:8px; background:var(--surface-2); display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0;}
+.pickup-request h4{ font-size:13.5px; margin-bottom:2px; }
+.pickup-request p{ font-size:12px; color:var(--text-dim); }
+.status-pill{ margin-left:auto; font-size:11px; padding:4px 10px; border-radius:100px; white-space:nowrap; }
+.status-pending{ background: rgba(217,164,65,0.15); color: var(--amber); }
+.status-confirmed{ background: rgba(95,191,126,0.15); color: var(--leaf); }
+
+/* Sustainability reports */
+.report-grid{ display:grid; grid-template-columns: repeat(4,1fr); gap:16px; margin-bottom:20px;}
+.report-card{ background: var(--surface); border:1px solid var(--line); border-radius: var(--radius); padding:18px 20px;}
+.report-card .num{ font-family:'Fraunces',serif; font-size:26px; color: var(--leaf); }
+.report-card .lbl{ font-size:12px; color: var(--text-dim); margin-top:4px;}
+.month-bars{ display:flex; align-items:flex-end; gap:14px; height:150px; padding-top:10px; }
+.month-bar-wrap{ flex:1; display:flex; flex-direction:column; align-items:center; gap:8px; height:100%; justify-content:flex-end;}
+.month-bar{ width:100%; max-width:34px; background: linear-gradient(180deg, var(--leaf), var(--moss)); border-radius:5px 5px 0 0; }
+.month-bar-wrap .ml{ font-size:11px; color:var(--text-faint); }
+.report-export{ display:flex; justify-content:space-between; align-items:center; }
+
+@media (max-width: 860px){
+  .home-grid{ grid-template-columns: repeat(2,1fr); }
+  .slot-grid{ grid-template-columns: repeat(2,1fr); }
+  .pickup-form{ grid-template-columns: 1fr; }
+  .report-grid{ grid-template-columns: repeat(2,1fr); }
+}
+
+::-webkit-scrollbar{ width:8px; }
+::-webkit-scrollbar-thumb{ background: var(--surface-2); border-radius:4px;}
+
+@media (max-width: 860px){
+  .login-wrap{ grid-template-columns:1fr; }
+  .login-hero{ display:none; }
+  #main-screen.active{ flex-direction:column; }
+  .sidebar{ width:100%; flex-direction:row; overflow-x:auto; padding:10px; }
+  .sidebar .brand-mark{ display:none; }
+  .sidebar-foot{ display:none; }
+  .nav-item{ white-space:nowrap; width:auto; }
+  .content{ padding: 20px; }
+  .grid-3{ grid-template-columns:1fr; }
+  .badges-grid{ grid-template-columns:repeat(2,1fr); }
+  .home-grid{ grid-template-columns:repeat(2,1fr); }
+  .pickup-form{ grid-template-columns:1fr; }
+  .impact-row{ grid-template-columns:repeat(2,1fr); }
+  .slot-grid{ grid-template-columns:repeat(2,1fr); }
+}
+
+/* ---------------- Phase 4: Waste Batch UI ---------------- */
+.batch-grid{display:grid;grid-template-columns:1.1fr 1.9fr;gap:18px;margin-bottom:20px}
+.batch-form{display:grid;gap:12px}
+.batch-form label{font-size:12px;color:var(--text-faint);display:block;margin-bottom:5px}
+.batch-form input,.batch-form select{width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface-2);color:var(--text);font:inherit}
+.batch-card{border:1px solid var(--border);border-radius:10px;padding:14px;background:var(--surface)}
+.batch-card-highlight{ animation: batchHighlightFlash 2.4s ease; border-color: var(--leaf, #5FBF7E) !important; }
+@keyframes batchHighlightFlash{
+  0%   { box-shadow: 0 0 0 3px rgba(95,191,126,0.55); }
+  70%  { box-shadow: 0 0 0 3px rgba(95,191,126,0.35); }
+  100% { box-shadow: 0 0 0 0 rgba(95,191,126,0); }
+}
+.batch-status{display:inline-flex;padding:4px 8px;border-radius:999px;font-size:11px;font-weight:700;background:rgba(105,180,100,.12);color:var(--leaf)}
+.batch-meta{display:flex;gap:14px;flex-wrap:wrap;color:var(--text-dim);font-size:12px;margin-top:8px}
+.batch-empty{padding:24px;text-align:center;color:var(--text-faint);border:1px dashed var(--border);border-radius:10px}
+@media(max-width:800px){.batch-grid{grid-template-columns:1fr}}
+
+.journey-track{display:flex;flex-direction:column;gap:0;margin-top:8px}.journey-step{display:flex;gap:12px;min-height:58px;position:relative;opacity:.45}.journey-step:not(:last-child):after{content:"";position:absolute;left:14px;top:30px;width:2px;height:42px;background:var(--border)}.journey-step.done{opacity:1}.journey-step.current{opacity:1}.journey-dot{width:30px;height:30px;border-radius:50%;border:1px solid var(--border);display:flex;align-items:center;justify-content:center;background:var(--bg);z-index:1;font-size:12px}.journey-step.done .journey-dot{background:var(--accent);color:#fff;border-color:var(--accent)}.journey-step.current strong{font-weight:800}.journey-step small{display:block;color:var(--text-faint);margin-top:3px;font-size:11px}.status-accepted{background:#e7f6ed;color:#16733c}.status-collected{background:#e7f6ed;color:#16733c}.status-scheduled{background:#fff5d9;color:#8a6500}
+
+.dashboard-insights-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
+.dashboard-insight{display:flex;gap:12px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--surface-2);}
+.dashboard-insight .di-icon{font-size:22px;line-height:1.2;}
+.dashboard-insight b{font-size:13px;}
+.dashboard-insight p{margin:5px 0 0;font-size:12px;line-height:1.55;color:var(--text-dim);}
+.dashboard-insight .btn-secondary{margin-top:9px;padding:6px 10px;font-size:11px;}
+@media(max-width:800px){.dashboard-insights-grid{grid-template-columns:1fr;}}
+.epr-report-setup{display:grid;grid-template-columns:1.1fr 1.5fr;gap:20px;align-items:end}
+.epr-report-fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.epr-report-fields .field{margin-bottom:0}
+.epr-report-checks{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;color:var(--text-dim);font-size:13px}
+.epr-report-checks div{padding:10px 12px;background:var(--bg-raised);border:1px solid var(--line);border-radius:8px}
+.epr-preview{background:var(--bg-raised);border:1px solid var(--line);border-radius:9px;padding:16px;font-size:12.5px;line-height:1.7;color:var(--text-dim);white-space:pre-wrap;font-family:'IBM Plex Mono',monospace;max-height:420px;overflow:auto}
+@media (max-width: 800px){.epr-report-setup,.epr-report-fields{grid-template-columns:1fr}.epr-report-checks{grid-template-columns:1fr}}
+
+</style>
+
+<style>
+.home-impact-hero{display:flex;justify-content:space-between;align-items:center;gap:28px;padding:30px;border-radius:22px;margin-bottom:18px;background:linear-gradient(135deg,var(--surface-2),var(--surface));border:1px solid var(--border);box-shadow:0 12px 35px rgba(0,0,0,.08)}
+.hero-copy{max-width:760px}.hero-kicker{font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--leaf);text-transform:uppercase}.home-impact-hero h2{font-size:30px;line-height:1.15;margin:8px 0 10px}.home-impact-hero p{color:var(--text-dim);max-width:680px;line-height:1.6}.hero-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:18px}.hero-stat-ring{width:150px;height:150px;min-width:150px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;border:7px solid var(--leaf);background:var(--surface);box-shadow:inset 0 0 0 7px var(--surface-2)}.ring-value{font-size:29px;font-weight:800}.ring-label{font-size:11px;color:var(--text-faint);line-height:1.35}.home-mini-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:0 0 18px}.home-kpi{padding:17px;border:1px solid var(--border);border-radius:15px;background:var(--surface);display:grid;grid-template-columns:auto 1fr;column-gap:10px}.home-kpi span{font-size:22px;grid-row:span 2}.home-kpi b{font-size:18px}.home-kpi small{color:var(--text-faint);font-size:11px}.journey-center-card{padding:22px;border-radius:18px;border:1px solid var(--border);background:var(--surface);margin-bottom:18px}.journey-center-card.empty{display:flex;align-items:center;justify-content:space-between;gap:20px;background:linear-gradient(135deg,var(--surface),var(--surface-2))}.journey-center-card h3{margin:5px 0}.journey-center-card p{margin:4px 0;color:var(--text-dim);font-size:13px}.journey-center-head{display:flex;justify-content:space-between;gap:18px;align-items:center}.journey-center-track{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;margin-top:20px}.jct-step{text-align:center;position:relative;color:var(--text-faint)}.jct-step span{display:flex;width:30px;height:30px;border-radius:50%;align-items:center;justify-content:center;margin:0 auto 7px;border:1px solid var(--border);background:var(--surface-2);font-size:12px}.jct-step small{font-size:9px;line-height:1.2;display:block}.jct-step.done{color:var(--text)}.jct-step.done span{background:var(--leaf);color:white;border-color:var(--leaf)}.jct-step.current span{box-shadow:0 0 0 4px rgba(80,150,90,.15)}.impact-banner-copy{flex:1}.impact-detail-grid{display:grid;grid-template-columns:repeat(4,minmax(100px,1fr));gap:10px;margin-top:16px}.impact-detail-grid>div{padding:11px 12px;border:1px solid var(--border);border-radius:12px;background:rgba(255,255,255,.03)}.impact-detail-grid b{display:block;font-size:17px}.impact-detail-grid span{display:block;color:var(--text-faint);font-size:10px;margin-top:3px}.impact-banner-actions{min-width:150px}
+.dashboard-impact-banner{margin-bottom:18px}.impact-banner-inner{padding:22px 24px;border-radius:18px;background:linear-gradient(135deg,var(--surface-2),var(--surface));border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:20px}.impact-banner-inner h2{margin:5px 0;font-size:26px}.impact-banner-inner p{margin:0;color:var(--text-dim);font-size:13px;max-width:720px;line-height:1.55}.impact-banner-actions{display:flex;gap:8px;flex-wrap:wrap}.dashboard-journey-center{margin-bottom:18px}
+@media(max-width:850px){.impact-detail-grid{grid-template-columns:repeat(2,1fr)}.home-impact-hero,.impact-banner-inner,.journey-center-card.empty{flex-direction:column;align-items:flex-start}.hero-stat-ring{align-self:center}.home-mini-kpis{grid-template-columns:repeat(2,1fr)}.journey-center-track{overflow-x:auto;grid-template-columns:repeat(8,minmax(80px,1fr));min-width:650px}.journey-center-card{overflow:hidden}.journey-center-head{align-items:flex-start;flex-direction:column}}
+
+/* Connected recovery workflow */
+.field input[readonly]{opacity:.9;border-color:var(--leaf-dim);background:rgba(95,191,126,.05)}
+#pu-partner{color:var(--leaf);font-weight:600}
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ================= LOGIN SCREEN ================= -->
+  <div id="login-screen" class="screen active">
+    <div class="login-wrap">
+      <div class="login-hero">
+        <div class="brand-mark"><span class="dot"></span> SortMate</div>
+        <div class="hero-copy">
+          <h1>Know exactly where it goes.</h1>
+          <p>Point your camera at anything you're about to throw away — SortMate tells you the right bin in seconds, and keeps score while it's at it.</p>
+        </div>
+        <div class="hero-stats">
+          <div><b>5</b><span>waste categories</span></div>
+          <div><b>12</b><span>hostels tracking</span></div>
+          <div><b>94%</b><span>sort accuracy</span></div>
+        </div>
+      </div>
+      <div class="login-form">
+        <h2 id="form-title">Welcome back</h2>
+        <p class="sub" id="form-sub">Log in with your campus email to keep your streak going.</p>
+
+        <div class="field" id="name-field" style="display:none;">
+          <label>Full name</label>
+          <input type="text" id="reg-name" placeholder="Asha Menon">
+        </div>
+        <div class="field">
+          <label>I am a</label>
+          <select id="login-role" onchange="handleRoleFieldToggle()">
+            <option value="generator">Waste Generator (student / individual)</option>
+            <option value="picker">Waste Picker / Collector</option>
+            <option value="recycler">Recycler</option>
+            <option value="brand">Brand (EPR-obligated)</option>
+          </select>
+        </div>
+        <div class="field">
+          <label id="email-label">Campus email</label>
+          <input type="email" id="login-email" placeholder="you@college.edu">
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="login-pass" placeholder="••••••••">
+        </div>
+        <div class="field" id="hostel-field" style="display:none;">
+          <label id="hostel-label">Hostel / Department</label>
+          <select id="reg-hostel">
+            <option>Hostel A — Kaveri</option>
+            <option>Hostel B — Ganga</option>
+            <option>Hostel C — Yamuna</option>
+            <option>Day Scholars</option>
+          </select>
+        </div>
+
+        <button class="btn-primary" id="login-btn" onclick="handleAuth()">Log in</button>
+        <div class="login-toggle" id="toggle-text">New here? <a onclick="toggleAuthMode()">Create an account</a></div>
+        <div class="hint">Demo prototype — any email/password combination works. Nothing here is sent anywhere; all data lives in this browser tab only.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= MAIN APP ================= -->
+  <div id="main-screen" class="screen">
+    <div class="sidebar">
+      <div class="brand-mark"><span class="dot"></span> SortMate</div>
+
+      <div class="nav-grid" id="nav-grid"></div>
+
+      <div class="sidebar-foot">
+        <div class="mini-profile">
+          <div class="avatar" id="sb-avatar">A</div>
+          <div>
+            <p id="sb-name">Asha Menon</p>
+            <span id="sb-hostel">Hostel A — Kaveri</span>
+          </div>
+        </div>
+        <a class="logout-link" onclick="logout()">Log out</a>
+      </div>
+    </div>
+
+    <div class="content">
+
+      <!-- ---- HOME TAB (grid launcher) ---- -->
+      <div class="tab-panel active" id="tab-home">
+        <div class="content-header">
+          <h1>Hi <span id="home-greet-name">Asha</span> 👋</h1>
+          <div class="streak-pill" id="home-role-pill">🔥 <span id="streak-count-home">4</span>-day streak</div>
+        </div>
+        <div class="home-impact-hero" id="home-impact-hero">
+          <div class="hero-copy">
+            <div class="hero-kicker">🌍 YOUR WASTE IMPACT</div>
+            <h2 id="home-impact-title">Every correctly recovered item creates a measurable impact.</h2>
+            <p id="home-impact-subtitle">Upload one waste item to see what you diverted, how much CO₂e you potentially avoided, and what to do next.</p>
+            <div class="hero-actions">
+              <button class="btn-confirm" onclick="switchTabByNav('classify')">📷 Check my waste</button>
+              <button class="btn-secondary" onclick="switchTabByNav('journey')">🧾 Track my waste journey</button>
+            </div>
+          </div>
+          <div class="hero-stat-ring"><div class="ring-value" id="home-impact-co2">0.0</div><div class="ring-label">kg CO₂e<br>estimated avoided</div></div>
+        </div>
+        <div class="home-mini-kpis" id="home-mini-kpis"></div>
+        <div class="home-journey-focus" id="home-journey-focus"></div>
+        <div class="home-grid" id="home-grid"></div>
+      </div>
+
+      <!-- ---- CLASSIFY TAB ---- -->
+      <div class="tab-panel" id="tab-classify">
+        <div class="content-header">
+          <h1>Classify an item</h1>
+          <div class="streak-pill">🔥 <span id="streak-count">4</span>-day streak</div>
+        </div>
+
+        <div class="panel">
+          <div id="classify-zone" class="classify-zone" onclick="document.getElementById('photo-input').click()">
+            <div class="icon">📷</div>
+            <p>Click to upload or take a photo of the item</p>
+            <div class="small">JPG or PNG · analysis runs in your browser</div>
+          </div>
+          <input type="file" id="photo-input" accept="image/*" capture="environment" onchange="handlePhoto(event)">
+
+          <div id="classify-result" style="display:none; margin-top:20px;">
+            <div class="preview-wrap">
+              <img id="preview-img" src="" alt="Uploaded item">
+
+              <!-- Pre-analysis: waiting for the user to trigger AI analysis -->
+              <div class="result-box" id="pre-analysis-box">
+                <h3 style="font-size:15px; margin-bottom:6px;">Photo ready</h3>
+                <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px;">Run AI analysis to identify the item, get a disposal recommendation, and see its environmental impact.</p>
+                <button class="btn-confirm" id="analyze-btn" onclick="runAnalysis()">✨ Run AI Analysis</button>
+              </div>
+
+              <!-- Post-analysis: full insights -->
+              <div class="result-box" id="post-analysis-box" style="display:none;">
+                <div id="category-tag" class="category-tag tag-dry">🥬 Wet Waste</div>
+                <div class="confidence-row">
+                  <span>Confidence</span>
+                  <div class="conf-bar"><div class="conf-fill" id="conf-fill" style="width:88%;"></div></div>
+                  <span id="conf-pct" class="mono">88%</span>
+                </div>
+                <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px;" id="category-reason">Looks organic — goes in the green bin for composting.</p>
+
+                <div class="insight-grid" id="insight-grid"></div>
+
+                <div class="insight-note" id="insight-note"></div>
+
+                <div id="ai-decision-panel" class="ai-decision-panel">
+                  <div class="ai-decision-head"><strong id="ai-confidence-status">AI decision</strong><span id="ai-source-badge" class="ai-source-badge">Demo fallback</span></div>
+                  <div id="ai-action" class="ai-action"></div>
+                  <div id="ai-explanation" class="ai-explanation"></div>
+                </div>
+
+                <div id="human-review-panel" class="human-review-panel">
+                  <div class="human-review-title">Human verification</div>
+                  <p id="human-review-copy">Please verify the AI classification before logging it.</p>
+                  <div class="human-review-actions">
+                    <button class="btn-confirm" type="button" onclick="verifyClassification(true)">✓ Confirm AI result</button>
+                    <button class="btn-secondary" type="button" onclick="verifyClassification(false)">✎ I corrected it</button>
+                  </div>
+                  <div id="verification-status" class="verification-status" style="display:none;"></div>
+                </div>
+
+                <p style="font-size:12px; color:var(--text-faint); margin:16px 0 8px 0;">Model confidence across all categories</p>
+                <div id="prob-bars" style="margin-bottom:16px;"></div>
+
+                <p style="font-size:12px; color:var(--text-faint); margin-bottom:8px;">Not right? Correct it:</p>
+                <div class="correction-row" id="correction-chips">
+                  <div class="chip" data-cat="wet">Wet</div>
+                  <div class="chip" data-cat="dry">Dry</div>
+                  <div class="chip" data-cat="recyclable">Recyclable</div>
+                  <div class="chip" data-cat="hazardous">Hazardous</div>
+                  <div class="chip" data-cat="ewaste">E-waste</div>
+                </div>
+
+                <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                  <button class="btn-confirm" onclick="confirmLog()">✓ Confirm &amp; log (<span id="confirm-pts-label">+10 pts</span>)</button>
+                  <button class="btn-secondary" onclick="resetClassify()">Try another</button>
+                </div>
+
+                <!-- Recovery action appears here only after human verification. -->
+                <div id="classification-batch-action" class="insight-note" style="display:none; margin-top:14px;">
+                  <div id="classification-batch-message"></div>
+                  <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
+                    <button class="btn-confirm" id="create-batch-from-classification-btn" onclick="createBatchFromClassification()">📦 Create waste batch &amp; open Batch Register</button>
+                    <button class="btn-secondary" id="go-matching-from-classification-btn" style="display:none;" onclick="goToMatchingForBatch(this.dataset.batchId)">🤝 Find AI recovery partner for this batch</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Recently logged</h3>
+          <table>
+            <thead><tr><th>Item</th><th>Category</th><th>Time</th><th>Points</th></tr></thead>
+            <tbody id="recent-log-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ---- PHASE 4: WASTE BATCHES ---- -->
+      <div class="tab-panel" id="tab-batches">
+        <div class="content-header">
+          <div><h1>Waste Batches</h1><p class="page-sub">Turn a human-verified classification into a traceable recovery request.</p></div>
+          <div class="streak-pill">📦 <span id="batch-count-pill">0</span> batches</div>
+        </div>
+        <div class="batch-grid">
+          <div class="panel">
+            <h3>Create recovery batch</h3>
+            <p style="font-size:12px;color:var(--text-faint);margin-bottom:14px;">A recovery batch is created from a human-verified, recovery-eligible classification. SortMate carries the verified material, confidence, source and verification record into the batch.</p>
+            <div id="batch-source-classification" class="insight-note" style="margin-bottom:12px;">No verified recovery-eligible classification yet. Classify and verify recyclable, dry or e-waste material first.</div>
+            <div class="batch-form">
+              <div><label>Verified material</label><input id="batch-material" readonly placeholder="Created from verified classification"></div>
+              <div><label>Quantity (kg)</label><input id="batch-qty" type="number" min="0.1" step="0.1" value="0.3"></div>
+              <div><label>Source / location</label><input id="batch-source" readonly placeholder="Inherited from verified classification"></div>
+              <button class="btn-confirm" id="create-verified-batch-btn" onclick="createBatchFromLatestVerification()" disabled>＋ Create recovery batch</button>
+            </div>
+          </div>
+          <div class="panel">
+            <h3>Batch register</h3>
+            <div id="waste-batch-list"></div>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Phase 4 workflow</h3>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;font-size:13px;color:var(--text-dim);">
+            <span>① AI identifies</span><span>→</span><span>② Human verifies</span><span>→</span><span>③ Recovery eligibility checked</span><span>→</span><span>④ Batch created from verified result</span><span>→</span><span>⑤ Ready for partner matching</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- PHASE 5: AI PARTNER MATCHING ---- -->
+      <div class="tab-panel" id="tab-matching">
+        <div class="content-header">
+          <div><h1>AI Partner Match</h1><p class="page-sub">Find a compatible recovery partner using material, quantity, distance, capacity and availability.</p></div>
+          <div class="streak-pill">🤝 Explainable matching</div>
+        </div>
+        <div class="batch-grid">
+          <div class="panel">
+            <h3>Match a waste batch</h3>
+            <p style="font-size:12px;color:var(--text-faint);margin-bottom:14px;">The prototype ranks registered demo partners. No real pickup is booked at this stage.</p>
+            <div class="batch-form">
+              <div><label>Waste batch</label><select id="match-batch-select" onchange="updateMatchActiveIdBanner()"></select></div>
+              <div><label>Search radius (km)</label><input id="match-radius" type="number" min="1" value="25"></div>
+              <div><label>Partner type</label><select id="match-type"><option value="any">Any compatible partner</option><option value="picker">Waste Picker</option><option value="aggregator">Aggregator</option><option value="recycler">Recycler</option></select></div>
+              <button class="btn-confirm" onclick="findPartnerMatches()">✨ Find AI matches</button>
+            </div>
+          </div>
+          <div class="panel">
+            <h3>How the score works</h3>
+            <div style="font-size:13px;color:var(--text-dim);line-height:1.8;">
+              <div>♻️ Material compatibility <b>50 pts</b></div>
+              <div>⚖️ Capacity fit <b>20 pts</b></div>
+              <div>📦 Minimum quantity fit <b>10 pts</b></div>
+              <div>📍 Within search radius <b>10 pts</b></div>
+              <div>🟢 Availability <b>5 pts</b></div>
+              <div>✓ Verified demo partner <b>5 pts</b></div>
+            </div>
+          </div>
+        </div>
+        <div class="panel">
+          <h3>Compatible partners</h3>
+          <div id="match-active-id" class="mono" style="font-size:12px;color:var(--leaf,#5FBF7E);margin-bottom:10px;display:none;"></div>
+          <div id="partner-match-results"><div class="batch-empty">Select a batch and run matching.</div></div>
+        </div>
+      </div>
+
+      <!-- ---- DASHBOARD TAB ---- -->
+      <div class="tab-panel" id="tab-dashboard">
+        <div class="content-header">
+          <div><h1>Dashboard</h1><p class="page-sub">Your segregation activity and impact at a glance.</p></div>
+          <div class="streak-pill">🔥 <span id="dash-streak">4</span>-day streak</div>
+        </div>
+
+        <div class="dashboard-impact-banner" id="dashboard-impact-banner"></div>
+        <div class="panel dashboard-insights-panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;">
+            <div><h3 style="margin:0 0 4px 0;">💡 What your waste data is telling you</h3><p style="margin:0;font-size:12px;color:var(--text-faint);">Actionable insights generated from your logged items and recovery journey.</p></div>
+            <span class="hero-kicker">SMART INSIGHTS</span>
+          </div>
+          <div id="dashboard-insights" class="dashboard-insights-grid"></div>
+        </div>
+        <div class="grid-4">
+          <div class="stat-card"><div class="stat-icon">📥</div><div class="num" id="dash-total">0</div><div class="lbl">Items logged</div></div>
+          <div class="stat-card"><div class="stat-icon">🎯</div><div class="num" id="dash-accuracy">100%</div><div class="lbl">Sort accuracy</div></div>
+          <div class="stat-card"><div class="stat-icon">⭐</div><div class="num" id="dash-points">0</div><div class="lbl">Total points</div></div>
+          <div class="stat-card"><div class="stat-icon">🌍</div><div class="num" id="dash-co2">0 kg</div><div class="lbl">CO₂e saved (est.)</div></div>
+        </div>
+        <div class="dashboard-journey-center" id="dashboard-journey-center"></div>
+
+        <div class="dash-layout">
+          <div class="dash-main">
+            <div class="panel" id="latest-scan-panel" style="display:none;">
+              <h3>Latest AI scan</h3>
+              <div id="latest-scan-body"></div>
+            </div>
+            <div class="panel">
+              <h3>Category breakdown</h3>
+              <div id="dash-bars"></div>
+            </div>
+            <div class="panel">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                <h3 style="margin:0;">Full history</h3>
+                <span style="font-size:12px; color:var(--text-faint);" id="dash-history-count">0 entries</span>
+              </div>
+              <table>
+                <thead><tr><th>Item</th><th>Category</th><th>Time</th><th>Points</th></tr></thead>
+                <tbody id="history-log-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="dash-side">
+            <div class="panel">
+              <h3>Your rank</h3>
+              <div id="dash-rank"></div>
+            </div>
+            <div class="panel">
+              <h3>Quick actions</h3>
+              <div class="quick-actions">
+                <button class="btn-secondary qa-btn" onclick="switchTabByNav('classify')">📷 Classify an item</button>
+                <button class="btn-secondary qa-btn" onclick="switchTabByNav('pickup')">🚚 Schedule a pickup</button>
+                <button class="btn-secondary qa-btn" onclick="switchTabByNav('reports')">🌍 View sustainability report</button>
+                <button class="btn-secondary qa-btn" onclick="switchTabByNav('chatbot')">💬 Ask where something goes</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- WASTE JOURNEY / PHASE 6 ---- -->
+      <div class="tab-panel" id="tab-journey">
+        <div class="content-header"><h1>Waste Journey</h1></div>
+        <div class="panel">
+          <h3>Track a recovery batch</h3>
+          <p style="font-size:13px;color:var(--text-dim);margin-bottom:14px;">Follow the material from verified sorting to pickup, collection and recovery. Prototype events are simulated and stored locally.</p>
+          <div class="pickup-form">
+            <div class="field full"><label>Batch</label><select id="journey-batch-select" onchange="renderJourney()"></select></div>
+          </div>
+        </div>
+        <div class="panel"><div id="journey-detail"></div></div>
+      </div>
+
+      <!-- ---- PICKUP & SCHEDULING TAB ---- -->
+      <div class="tab-panel" id="tab-pickup">
+        <div class="content-header"><h1>Pickup &amp; scheduling</h1></div>
+
+        <div class="panel">
+          <h3>Next scheduled collections on campus</h3>
+          <div class="slot-grid">
+            <div class="slot-item"><div class="sd">Dry &amp; Recyclables</div><div class="sn">Mon</div><div class="sc">7:30 AM</div></div>
+            <div class="slot-item"><div class="sd">Wet Waste</div><div class="sn">Daily</div><div class="sc">6:00 AM</div></div>
+            <div class="slot-item"><div class="sd">E-Waste</div><div class="sn">1st Sat</div><div class="sc">10:00 AM</div></div>
+            <div class="slot-item"><div class="sd">Hazardous</div><div class="sn">On request</div><div class="sc">Staff-assisted</div></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Request a pickup</h3>
+          <p style="font-size:13px; color:var(--text-dim); margin-bottom:16px;">For anything too big or too hazardous to carry to a drop-off point yourself — bulk e-waste, old furniture, broken tube lights, chemical containers.</p>
+          <div id="pickup-active-id" class="mono" style="font-size:12px;color:var(--leaf,#5FBF7E);margin-bottom:12px;display:none;"></div>
+          <div class="pickup-form">
+            <div class="field">
+              <label>Waste Batch ID</label>
+              <select id="pu-batch" onchange="syncPickupBatch()"><option value="">Select a waste batch</option></select>
+            </div>
+            <div class="field">
+              <label>Assigned recovery partner</label>
+              <input type="text" id="pu-partner" readonly placeholder="Select a matched recovery batch">
+            </div>
+            <div class="field">
+              <label>Waste type</label>
+              <select id="pu-type">
+                <option value="ewaste">E-waste</option>
+                <option value="hazardous">Hazardous</option>
+                <option value="bulk-dry">Bulk dry / recyclables</option>
+                <option value="bulk-wet">Bulk wet waste</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Preferred date</label>
+              <input type="date" id="pu-date">
+            </div>
+            <div class="field">
+              <label>Preferred time slot</label>
+              <select id="pu-slot">
+                <option>Morning (8–10 AM)</option>
+                <option>Midday (12–2 PM)</option>
+                <option>Evening (4–6 PM)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label>Pickup location</label>
+              <input type="text" id="pu-location" placeholder="e.g. Hostel A, Room 204">
+            </div>
+            <div class="field full">
+              <label>Notes (optional)</label>
+              <input type="text" id="pu-notes" placeholder="e.g. 2 old monitors and a broken chair">
+            </div>
+          </div>
+          <button class="btn-confirm" onclick="submitPickup()">🚚 Schedule pickup</button>
+          <p style="font-size:11px;color:var(--text-faint);margin-top:8px;">Every pickup is linked to the <b>exact Waste Batch ID</b> selected from the Waste Batches register. The assigned partner, material and batch journey carry forward. If plans change, <b>Reschedule</b> updates this same pickup without creating a new Waste Batch or Pickup ID.</p>
+          <div id="pickup-feedback" style="margin-top:10px;font-size:13px;color:var(--text-dim);"></div>
+        </div>
+
+        <div class="panel">
+          <h3>Your requests</h3>
+          <div id="pickup-list"></div>
+        </div>
+      </div>
+
+      <!-- ---- LEADERBOARD TAB ---- -->
+      <div class="tab-panel" id="tab-leaderboard">
+        <div class="content-header"><h1>Leaderboard</h1></div>
+        <div class="tabs-row">
+          <button class="active" onclick="setLbMode('individual', this)">Individuals</button>
+          <button onclick="setLbMode('hostel', this)">Hostels</button>
+        </div>
+        <div class="panel" id="lb-list"></div>
+      </div>
+
+      <!-- ---- CHATBOT TAB ---- -->
+      <div class="tab-panel" id="tab-chatbot">
+        <div class="content-header"><h1>Ask SortMate</h1></div>
+        <div class="panel">
+          <div class="suggested-q">
+            <div class="chip" onclick="askSuggested('Where does a pizza box go?')">Pizza box?</div>
+            <div class="chip" onclick="askSuggested('Is a chip packet recyclable?')">Chip packet?</div>
+            <div class="chip" onclick="askSuggested('What do I do with a dead battery?')">Dead battery?</div>
+            <div class="chip" onclick="askSuggested('Where do I throw medicine strips?')">Medicine strips?</div>
+          </div>
+          <div class="chat-window" id="chat-window">
+            <div class="msg bot">Hi! Ask me where anything goes — try "where does a pizza box go?" or tap a suggestion above.</div>
+          </div>
+          <div class="chat-input-row">
+            <input type="text" id="chat-input" placeholder="Type an item, e.g. 'broken tube light'" onkeydown="if(event.key==='Enter') sendChat()">
+            <button class="btn-confirm" onclick="sendChat()">Ask</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- LOCATOR TAB ---- -->
+      <div class="tab-panel" id="tab-locator">
+        <div class="content-header"><h1>Special drop-off points</h1></div>
+        <p style="color:var(--text-dim); font-size:14px; margin-bottom:18px;">Batteries, e-waste, and medicine can't go in a regular bin. Here's where to take them on campus.</p>
+        <div id="locator-list"></div>
+      </div>
+
+      <!-- ---- SUSTAINABILITY REPORTS TAB ---- -->
+      <div class="tab-panel" id="tab-reports">
+        <div class="content-header">
+          <h1>Sustainability report</h1>
+          <div class="streak-pill" id="report-range">Last 6 months</div>
+        </div>
+
+        <div class="report-grid">
+          <div class="report-card"><div class="num" id="rep-diverted">—</div><div class="lbl">kg diverted from landfill</div></div>
+          <div class="report-card"><div class="num" id="rep-co2">—</div><div class="lbl">kg CO₂e avoided</div></div>
+          <div class="report-card"><div class="num" id="rep-compost">—</div><div class="lbl">kg sent to composting</div></div>
+          <div class="report-card"><div class="num" id="rep-recycled">—</div><div class="lbl">kg recycled</div></div>
+        </div>
+
+        <div class="panel">
+          <h3>Monthly waste diverted (kg)</h3>
+          <div class="month-bars" id="month-bars"></div>
+        </div>
+
+        <div class="panel">
+          <h3>Category share, this month</h3>
+          <div id="rep-bars"></div>
+        </div>
+
+        <div class="panel">
+          <h3>CO₂e saved by category</h3>
+          <p style="font-size:12.5px; color:var(--text-dim); margin-bottom:14px;">Recycling saves carbon mainly by avoiding energy-intensive virgin material production; organics save it by avoiding landfill methane. Rates below are illustrative, based on published life-cycle estimates.</p>
+          <div id="rep-co2-bars"></div>
+        </div>
+
+        <div class="panel">
+          <div class="report-export">
+            <div>
+              <h3 style="margin-bottom:4px;">Export report</h3>
+              <p style="font-size:12.5px; color:var(--text-dim);">Download a plain-text summary for hostel meetings or the sustainability office.</p>
+            </div>
+            <button class="btn-confirm" onclick="exportReport()">Download report (.txt)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ---- COLLECT TAB (Waste Picker) ---- -->
+      <div class="tab-panel" id="tab-collect">
+        <div class="content-header">
+          <div><h1>Log a pickup</h1><p class="page-sub">Scan the material, log its weight, and get paid instantly.</p></div>
+        </div>
+
+        <div class="grid-4">
+          <div class="stat-card"><div class="stat-icon">⚖️</div><div class="num" id="pk-total-kg">0.0 kg</div><div class="lbl">Total collected</div></div>
+          <div class="stat-card"><div class="stat-icon">💰</div><div class="num" id="pk-total-earn">₹0</div><div class="lbl">Total earnings</div></div>
+          <div class="stat-card"><div class="stat-icon">📦</div><div class="num" id="pk-total-count">0</div><div class="lbl">Pickups logged</div></div>
+          <div class="stat-card"><div class="stat-icon">🏭</div><div class="num" id="pk-avg-rate">₹0/kg</div><div class="lbl">Avg. rate earned</div></div>
+        </div>
+
+        <div class="panel">
+          <h3>New collection</h3>
+          <div class="classify-zone" id="pk-zone" onclick="document.getElementById('pk-photo-input').click()">
+            <div class="icon">📷</div>
+            <p>Click to photograph the plastic item collected</p>
+            <div class="small">AI identifies the plastic grade — PET, HDPE, PVC and more</div>
+          </div>
+          <input type="file" id="pk-photo-input" accept="image/*" capture="environment" onchange="handleCollectPhoto(event)">
+
+          <div id="pk-result" style="display:none; margin-top:20px;">
+            <div class="preview-wrap">
+              <img id="pk-preview-img" src="" alt="Collected item">
+              <div class="result-box">
+                <div id="pk-pre-box">
+                  <p style="font-size:13px; color:var(--text-dim); margin-bottom:12px;">Photo ready.</p>
+                  <button class="btn-confirm" id="pk-analyze-btn" onclick="runGradeAnalysis()">✨ Scan plastic grade</button>
+                </div>
+                <div id="pk-post-box" style="display:none;">
+                  <div id="pk-grade-tag" class="category-tag tag-recyclable">♻️ PET</div>
+                  <div class="confidence-row">
+                    <span>Confidence</span>
+                    <div class="conf-bar"><div class="conf-fill" id="pk-conf-fill" style="width:88%;"></div></div>
+                    <span id="pk-conf-pct" class="mono">88%</span>
+                  </div>
+                  <p style="font-size:12px; color:var(--text-faint); margin-bottom:8px;">Not right? Correct it:</p>
+                  <div class="correction-row" id="pk-correction-chips"></div>
+
+                  <div class="field-row">
+                    <div class="field"><label>Weight (kg)</label><input type="number" id="pk-weight" step="0.1" min="0" placeholder="e.g. 2.5"></div>
+                    <div class="field"><label>Rate</label><input type="text" id="pk-rate-display" readonly></div>
+                  </div>
+                  <div class="field-row">
+                    <div class="field"><label>Collected from</label><input type="text" id="pk-source" placeholder="Household / shop name"></div>
+                    <div class="field"><label>Area</label><input type="text" id="pk-area" placeholder="e.g. Sector 12"></div>
+                  </div>
+
+                  <div style="display:flex; gap:10px;">
+                    <button class="btn-confirm" onclick="submitCollection()">✓ Log &amp; get paid</button>
+                    <button class="btn-secondary" onclick="resetCollect()">Try another</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Recent collections</h3>
+          <table>
+            <thead><tr><th>ID</th><th>Grade</th><th>Weight</th><th>Source</th><th>Earned</th></tr></thead>
+            <tbody id="pk-log-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ---- MATERIAL RECOVERY TAB (Recycler) ---- -->
+      <div class="tab-panel" id="tab-recovery">
+        <div class="content-header">
+          <div><h1>Material recovery</h1><p class="page-sub">Process incoming batches and log verified recovery output.</p></div>
+        </div>
+
+        <div class="grid-4">
+          <div class="stat-card"><div class="stat-icon">📥</div><div class="num" id="rc-input-kg">0 kg</div><div class="lbl">Total input logged</div></div>
+          <div class="stat-card"><div class="stat-icon">✅</div><div class="num" id="rc-output-kg">0 kg</div><div class="lbl">Total recovered</div></div>
+          <div class="stat-card"><div class="stat-icon">📈</div><div class="num" id="rc-avg-eff">0%</div><div class="lbl">Avg. recovery efficiency</div></div>
+          <div class="stat-card"><div class="stat-icon">🧾</div><div class="num" id="rc-batch-count">0</div><div class="lbl">Batches processed</div></div>
+        </div>
+
+        <div class="panel">
+          <h3>Process a new batch</h3>
+          <div class="pickup-form">
+            <div class="field"><label>Incoming material grade</label>
+              <select id="rc-grade"></select>
+            </div>
+            <div class="field"><label>Input weight (kg)</label><input type="number" id="rc-input-weight" step="0.1" min="0" placeholder="e.g. 120"></div>
+            <div class="field full"><label>Source (picker / aggregator)</label><input type="text" id="rc-source" placeholder="e.g. Sector 12 collection route"></div>
+          </div>
+          <button class="btn-confirm" onclick="processBatch()">⚙️ Process batch</button>
+        </div>
+
+        <div class="panel">
+          <h3>Processed batches</h3>
+          <table>
+            <thead><tr><th>Batch ID</th><th>Grade</th><th>Input</th><th>Recovered</th><th>Efficiency</th><th>Purity</th><th></th></tr></thead>
+            <tbody id="rc-log-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ---- RECOVERY LEDGER TAB (Picker / Recycler / Brand) ---- -->
+      <div class="tab-panel" id="tab-ledger">
+        <div class="content-header">
+          <div><h1>Recovery ledger</h1><p class="page-sub">Chain-of-custody record — every handoff, from collection to recovery.</p></div>
+        </div>
+        <div class="panel">
+          <table>
+            <thead><tr><th>ID</th><th>Stage</th><th>Grade</th><th>Weight</th><th>Actor</th><th>Time</th></tr></thead>
+            <tbody id="ledger-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ---- EPR + SUSTAINABILITY REPORTING TAB (Brand) ---- -->
+      <div class="tab-panel" id="tab-epr">
+        <div class="content-header">
+          <div><h1>EPR &amp; sustainability reporting</h1><p class="page-sub">Turn verified recovery journeys into a traceable sustainability report for brands and organizations.</p></div>
+          <div class="streak-pill">📑 Reporting center</div>
+        </div>
+
+        <div class="panel epr-report-setup">
+          <div>
+            <h3 style="margin-bottom:4px;">Report settings</h3>
+            <p style="font-size:12px;color:var(--text-faint);">Set the organization and reporting period shown in the exported report.</p>
+          </div>
+          <div class="epr-report-fields">
+            <div class="field"><label>Organization / brand</label><input id="epr-org-name" value="SortMate Demo Brand" placeholder="Organization name"></div>
+            <div class="field"><label>Reporting period</label><select id="epr-period"><option>FY 2026–27</option><option>Q1 FY 2026–27</option><option>Q2 FY 2026–27</option><option>Q3 FY 2026–27</option><option>Q4 FY 2026–27</option></select></div>
+          </div>
+        </div>
+
+        <div class="grid-4">
+          <div class="stat-card"><div class="stat-icon">♻️</div><div class="num" id="epr-total-recovered">0 kg</div><div class="lbl">Verified recovered material</div></div>
+          <div class="stat-card"><div class="stat-icon">🎯</div><div class="num" id="epr-total-pct">0%</div><div class="lbl">EPR target progress</div></div>
+          <div class="stat-card"><div class="stat-icon">🔗</div><div class="num" id="epr-batch-count">0</div><div class="lbl">Traceable recovery batches</div></div>
+          <div class="stat-card"><div class="stat-icon">🌍</div><div class="num" id="epr-co2">0 kg</div><div class="lbl">CO₂e avoided (est.)</div></div>
+        </div>
+
+        <div class="grid-3">
+          <div class="stat-card"><div class="stat-icon">📦</div><div class="num" id="epr-input-kg">0 kg</div><div class="lbl">Material collected</div></div>
+          <div class="stat-card"><div class="stat-icon">🏭</div><div class="num" id="epr-output-rate">0%</div><div class="lbl">Recovery yield</div></div>
+          <div class="stat-card"><div class="stat-icon">✓</div><div class="num" id="epr-journey-complete">0%</div><div class="lbl">Journeys reaching recovery</div></div>
+        </div>
+
+        <div class="panel">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;">
+            <div><h3 style="margin-bottom:4px;">Recovery by category vs. EPR target</h3><p style="font-size:12px;color:var(--text-faint);">The prototype tracks verified recovery against configured annual targets.</p></div>
+            <span class="hero-kicker">TRACEABLE DATA</span>
+          </div>
+          <div id="epr-bars"></div>
+        </div>
+
+        <div class="panel">
+          <h3>What the report contains</h3>
+          <div class="epr-report-checks">
+            <div>✓ Verified recovery volume</div><div>✓ Material-category breakdown</div><div>✓ Recovery batch IDs</div><div>✓ Recovery partners</div><div>✓ Journey completion status</div><div>✓ Estimated CO₂e avoided</div><div>✓ EPR target progress</div><div>✓ Data assumptions &amp; demo-data note</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="report-export">
+            <div>
+              <h3 style="margin-bottom:4px;">Generate sustainability / EPR report</h3>
+              <p style="font-size:12.5px; color:var(--text-dim);">Export a human-readable report containing the current platform data and clearly labelled prototype assumptions.</p>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button class="btn-secondary" onclick="previewEPRReport()">Preview report</button>
+              <button class="btn-confirm" onclick="exportEPRReport()">Download report (.txt)</button>
+            </div>
+          </div>
+          <div id="epr-report-preview" style="display:none;margin-top:16px;"></div>
+        </div>
+      </div>
+
+      <!-- ---- PROFILE TAB ---- -->
+      <div class="tab-panel" id="tab-profile">
+        <div class="content-header"><h1>Profile</h1></div>
+        <div class="panel">
+          <div class="field-row">
+            <div class="field"><label>Full name</label><input type="text" id="profile-name" value="Asha Menon"></div>
+            <div class="field"><label>Hostel / Department</label>
+              <select id="profile-hostel">
+                <option>Hostel A — Kaveri</option>
+                <option>Hostel B — Ganga</option>
+                <option>Hostel C — Yamuna</option>
+                <option>Day Scholars</option>
+              </select>
+            </div>
+          </div>
+          <div class="field" style="display:flex; align-items:center; gap:10px; margin-top:4px;">
+            <input type="checkbox" id="lb-optin" checked style="width:auto;">
+            <label style="margin:0; font-size:13px; color:var(--text-dim);">Show me on the leaderboard</label>
+          </div>
+          <button class="btn-confirm" style="margin-top:10px;" onclick="saveProfile()">Save changes</button>
+        </div>
+
+        <div class="panel">
+          <h3>Badges</h3>
+          <div class="badges-grid">
+            <div class="badge-item"><div class="bi">🌱</div><p>First Sort</p></div>
+            <div class="badge-item"><div class="bi">🔥</div><p>3-Day Streak</p></div>
+            <div class="badge-item locked"><div class="bi">♻️</div><p>50 Items</p></div>
+            <div class="badge-item locked"><div class="bi">⚡</div><p>E-waste Hero</p></div>
+            <div class="badge-item locked"><div class="bi">🏆</div><p>Hostel Champion</p></div>
+            <div class="badge-item locked"><div class="bi">💯</div><p>100% Week</p></div>
+            <div class="badge-item locked"><div class="bi">🌍</div><p>30-Day Streak</p></div>
+            <div class="badge-item locked"><div class="bi">🎯</div><p>Zero Corrections</p></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/* ---------------- State (in-memory only) ---------------- */
+let isRegisterMode = false;
+let user = { name: "Asha Menon", hostel: "Hostel A — Kaveri", role: "generator" };
+let points = 0;
+let streak = 4;
+let log = []; // {item, category, time, pts, corrected}
+
+const CATEGORIES = {
+  wet:        { label: "Wet Waste",    icon:"🥬", tagClass:"tag-wet",        reason:"Looks organic — goes in the green bin for composting." },
+  dry:        { label: "Dry Waste",    icon:"📦", tagClass:"tag-dry",        reason:"Non-organic and non-recyclable — goes in the grey/dry bin." },
+  recyclable: { label: "Recyclable",   icon:"♻️", tagClass:"tag-recyclable", reason:"Clean paper, plastic, glass or metal — goes in the blue recyclables bin." },
+  hazardous:  { label: "Hazardous",    icon:"⚠️", tagClass:"tag-hazardous",  reason:"Chemicals, batteries or medicine — needs a special drop-off point, not a regular bin." },
+  ewaste:     { label: "E-Waste",      icon:"🔌", tagClass:"tag-ewaste",     reason:"Electronics or cables — take this to the e-waste collection point." }
+};
+
+let pendingCategory = null;
+let pendingLabel = null;
+let pendingInsights = null;
+let wasteBatches = JSON.parse(localStorage.getItem('sortmate_waste_batches') || '[]'); // Phase 4 persistent batch state
+let highlightBatchId = null; // Batch ID to visually highlight/scroll to the next time the Batch Register renders
+
+
+/* ---------------- Roles & navigation ---------------- */
+const TAB_META = {
+  home:        { icon:"🏠", label:"Home" },
+  classify:    { icon:"📷", label:"Classify",           desc:"Photograph an item, get the right bin instantly." },
+  batches:     { icon:"📦", label:"Waste Batches",       desc:"Turn verified waste into a traceable recovery request." },
+  matching:    { icon:"🤝", label:"AI Partner Match",     desc:"Match verified batches with compatible recovery partners." },
+  journey:     { icon:"🧾", label:"Waste Journey",         desc:"Track pickup, collection and recovery status for every batch." },
+  dashboard:   { icon:"📊", label:"Dashboard",           desc:"Your accuracy, points and sorting history." },
+  pickup:      { icon:"🚚", label:"Pickup & Scheduling", desc:"Book a bulk or e-waste pickup, see upcoming collections." },
+  leaderboard: { icon:"🏆", label:"Leaderboard",         desc:"See how you and your hostel rank campus-wide." },
+  chatbot:     { icon:"💬", label:"Ask SortMate",        desc:"Not sure where something goes? Just ask." },
+  locator:     { icon:"📍", label:"Drop-off Points",     desc:"Find the nearest e-waste and hazardous waste point." },
+  reports:     { icon:"📊", label:"Sustainability Reports", desc:"Your waste diverted, CO₂ saved, and monthly trends." },
+  collect:     { icon:"♻️", label:"Log Pickup",          desc:"Scan a plastic item's grade, log weight, get paid." },
+  recovery:    { icon:"🏭", label:"Material Recovery",   desc:"Process incoming batches into verified recovered output." },
+  ledger:      { icon:"🔗", label:"Recovery Ledger",     desc:"The full chain-of-custody trail, collection to recovery." },
+  epr:         { icon:"🏢", label:"EPR Compliance",      desc:"Verified recovery volume vs. your annual EPR target." },
+  profile:     { icon:"👤", label:"Profile" }
+};
+
+const NAV_CONFIG = {
+  generator: ["home","classify","batches","matching","journey","dashboard","pickup","leaderboard","chatbot","locator","reports","profile"],
+  picker:    ["home","batches","matching","journey","collect","ledger","chatbot","profile"],
+  recycler:  ["home","batches","matching","journey","recovery","ledger","reports","profile"],
+  brand:     ["home","batches","journey","epr","ledger","reports","profile"]
+};
+
+const ROLE_LABELS = { generator:"Waste Generator", picker:"Waste Picker", recycler:"Recycler", brand:"Brand (EPR)" };
+
+function renderNavForRole(role){
+  const cfg = NAV_CONFIG[role] || NAV_CONFIG.generator;
+  const grid = document.getElementById('nav-grid');
+  grid.innerHTML = cfg.map((tab, i) => {
+    const m = TAB_META[tab];
+    return `<button class="nav-item${i===0?' active':''}" data-tab="${tab}" onclick="switchTab('${tab}')"><span class="ic">${m.icon}</span> ${m.label}</button>`;
+  }).join('');
+}
+
+function renderHomeTiles(role){
+  const cfg = (NAV_CONFIG[role] || NAV_CONFIG.generator).filter(t => t !== 'home' && !['dashboard','journey','impact'].includes(t));
+  const grid = document.getElementById('home-grid');
+  if(grid){
+    grid.innerHTML = cfg.map(tab => {
+      const m = TAB_META[tab];
+      return `<div class="home-tile" onclick="switchTabByNav('${tab}')">
+        <div><div class="ti">${m.icon}</div><h4>${m.label}</h4><p>${m.desc || ''}</p></div>
+      </div>`;
+    }).join('');
+  }
+  renderHomeImpact();
+}
+
+function getWasteImpact(){
+  let weightKg=0, co2=0, recyclableKg=0, recoveredKg=0, verified=0, batches=0, recoveredBatches=0;
+  log.forEach(e=>{
+    const kg=e.weightG ? Number(e.weightG)/1000 : 0;
+    weightKg+=kg; co2+=Number(e.co2||0);
+    if(e.category==='Recyclable' || e.category==='E-Waste' || e.category==='Dry Waste') recyclableKg+=kg;
+    if(e.verification) verified++;
+  });
+  wasteBatches.forEach(b=>{
+    batches++;
+    if(currentJourneyStatus(b)==='Recovered'){
+      recoveredBatches++;
+      recoveredKg += Number(b.recoveredKg ?? b.qtyKg ?? 0);
+    }
+  });
+  return {weightKg,co2,recyclableKg,recoveredKg,verified,batches,recoveredBatches};
+}
+
+function renderHomeImpact(){
+  const el=document.getElementById('home-impact-co2');
+  const kpis=document.getElementById('home-mini-kpis');
+  const journey=document.getElementById('home-journey-focus');
+  if(!el||!kpis||!journey) return;
+  const x=getWasteImpact();
+  el.textContent=x.co2.toFixed(1);
+  kpis.innerHTML=`
+    <div class="home-kpi"><span>♻️</span><b>${x.weightKg.toFixed(2)} kg</b><small>waste identified</small></div>
+    <div class="home-kpi"><span>✅</span><b>${x.verified}</b><small>human verified</small></div>
+    <div class="home-kpi"><span>📦</span><b>${x.batches}</b><small>recovery batches</small></div>
+    <div class="home-kpi"><span>🌱</span><b>${x.recoveredKg.toFixed(2)} kg</b><small>verified recovered</small></div>`;
+
+  const active=wasteBatches.filter(b=>{const st=currentJourneyStatus(b);return st!=='Recovered' && (b.partnerId || b.journey);}).sort((a,b)=>new Date(b.lastUpdatedAt||b.createdAt||0)-new Date(a.lastUpdatedAt||a.createdAt||0))[0];
+  if(active){
+    const idx=journeyIndex(currentJourneyStatus(active));
+    journey.innerHTML=`<div class="journey-center-card">
+      <div class="journey-center-head"><div><span class="hero-kicker">🧾 WASTE JOURNEY</span><h3>${esc(active.id)} · ${esc(active.material)}</h3><p>${active.qtyKg} kg · ${esc(currentJourneyStatus(active))}${active.partnerName?' · '+esc(active.partnerName):''}</p></div><button class="btn-secondary" onclick="switchTabByNav('journey')">Open full journey →</button></div>
+      <div class="journey-center-track">${JOURNEY_STEPS.map((st,i)=>`<div class="jct-step ${i<=idx?'done':''} ${i===idx?'current':''}"><span>${i<=idx?'✓':i+1}</span><small>${st}</small></div>`).join('')}</div>
+    </div>`;
+  }else{
+    journey.innerHTML=`<div class="journey-center-card empty"><div><span class="hero-kicker">🧾 YOUR WASTE JOURNEY</span><h3>Turn your first waste item into a traceable recovery story.</h3><p>Verify an item, create a batch, match a recovery partner and follow it all the way to recovery.</p></div><button class="btn-confirm" onclick="switchTabByNav('classify')">Start with an item →</button></div>`;
+  }
+}
+
+
+/* ---------------- Plastic grade data (Waste Picker / Recycler / EPR) ---------------- */
+const PLASTIC_GRADES = {
+  pet:   { label:"PET",  icon:"🧴", rate:12, recoveryEff:0.85 },
+  hdpe:  { label:"HDPE", icon:"🧃", rate:10, recoveryEff:0.80 },
+  pp:    { label:"PP",   icon:"🥡", rate:8,  recoveryEff:0.75 },
+  ldpe:  { label:"LDPE", icon:"🛍️", rate:6,  recoveryEff:0.70 },
+  pvc:   { label:"PVC",  icon:"🚰", rate:4,  recoveryEff:0.40 },
+  ps:    { label:"PS",   icon:"🥤", rate:3,  recoveryEff:0.55 },
+  mlp:   { label:"Multi-layer (MLP)", icon:"🍬", rate:2, recoveryEff:0.20 },
+  other: { label:"Mixed / Other",     icon:"📦", rate:1, recoveryEff:0.30 }
+};
+const GRADE_HUE_ORDER = ["pvc","mlp","pp","hdpe","ldpe","other","ps","pet"];
+
+/* ---------------- Auth ---------------- */
+function handleRoleFieldToggle(){
+  const role = document.getElementById('login-role').value;
+  const emailLabels = { generator:"Campus email", picker:"Mobile number / email", recycler:"Facility email", brand:"Company email" };
+  const hostelLabels = { generator:"Hostel / Department", picker:"Collection area", recycler:"Facility name", brand:"Company name" };
+  document.getElementById('email-label').textContent = emailLabels[role] || "Email";
+  document.getElementById('hostel-label').textContent = hostelLabels[role] || "Organization";
+}
+
+function toggleAuthMode(){
+  isRegisterMode = !isRegisterMode;
+  document.getElementById('name-field').style.display = isRegisterMode ? 'block' : 'none';
+  document.getElementById('hostel-field').style.display = isRegisterMode ? 'block' : 'none';
+  document.getElementById('form-title').textContent = isRegisterMode ? 'Create your account' : 'Welcome back';
+  document.getElementById('form-sub').textContent = isRegisterMode ? 'Tell us who you are so we can set up the right dashboard.' : 'Log in to keep your streak going.';
+  document.getElementById('login-btn').textContent = isRegisterMode ? 'Create account' : 'Log in';
+  document.getElementById('toggle-text').innerHTML = isRegisterMode
+    ? 'Already have an account? <a onclick="toggleAuthMode()">Log in</a>'
+    : 'New here? <a onclick="toggleAuthMode()">Create an account</a>';
+}
+
+function handleAuth(){
+  const email = document.getElementById('login-email').value.trim();
+  if(!email){ document.getElementById('login-email').focus(); return; }
+  user.role = document.getElementById('login-role').value;
+  if(isRegisterMode){
+    const name = document.getElementById('reg-name').value.trim();
+    user.name = name || email.split('@')[0];
+    user.hostel = document.getElementById('reg-hostel').value;
+  } else {
+    user.name = user.name || email.split('@')[0];
+  }
+  document.getElementById('sb-name').textContent = user.name;
+  document.getElementById('sb-hostel').textContent = user.hostel + ' · ' + ROLE_LABELS[user.role];
+  document.getElementById('sb-avatar').textContent = user.name.charAt(0).toUpperCase();
+  document.getElementById('profile-name').value = user.name;
+  document.getElementById('profile-hostel').value = user.hostel;
+
+  const homeName = document.getElementById('home-greet-name');
+  if(homeName) homeName.textContent = user.name.split(' ')[0];
+
+  renderNavForRole(user.role);
+  renderHomeTiles(user.role);
+  switchTab('home');
+
+  document.getElementById('login-screen').classList.remove('active');
+  document.getElementById('main-screen').classList.add('active');
+  renderLeaderboard();
+  renderLocator();
+  renderPickups();
+  populateGradeSelects();
+  renderCollections();
+  renderRecovery();
+  renderLedger();
+  renderEPR();
+}
+
+function logout(){
+  document.getElementById('main-screen').classList.remove('active');
+  document.getElementById('login-screen').classList.add('active');
+}
+
+/* ---------------- Tabs ---------------- */
+function switchTab(name){
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if(name === 'batches') renderWasteBatches();
+  if(name === 'matching') renderPartnerMatching();
+  if(name === 'journey') renderJourney();
+  if(name === 'dashboard') renderDashboard();
+  if(name === 'home') renderHomeImpact();
+  if(name === 'reports') renderReports();
+  if(name === 'pickup'){ renderPickupBatchOptions(); renderPickups(); }
+  if(name === 'collect') renderCollections();
+  if(name === 'recovery') renderRecovery();
+  if(name === 'ledger') renderLedger();
+  if(name === 'epr') renderEPR();
+}
+function switchTabByNav(name){ switchTab(name); }
+
+/* ---------------- Classify (simulated on-device model) ---------------- */
+function handlePhoto(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    document.getElementById('preview-img').src = ev.target.result;
+    document.getElementById('classify-result').style.display = 'block';
+    document.getElementById('pre-analysis-box').style.display = 'block';
+    document.getElementById('post-analysis-box').style.display = 'none';
+    const btn = document.getElementById('analyze-btn');
+    btn.disabled = false;
+    btn.classList.remove('analyzing');
+    btn.innerHTML = '✨ Run AI Analysis';
+    pendingImageData = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+let pendingImageData = null;
+
+// Optional real AI backend. Set this before loading the page, for example:
+// window.SORTMATE_AI_ENDPOINT = "http://localhost:8000/api/classify";
+// The browser never stores an API key. If the endpoint is unavailable, the
+// prototype uses the local demo fallback and clearly labels it as such.
+const SORTMATE_AI_ENDPOINT = window.SORTMATE_AI_ENDPOINT || '';
+let pendingAIResult = null;
+let pendingVerification = null;
+
+async function runAnalysis(){
+  if(!pendingImageData) return;
+  const btn = document.getElementById('analyze-btn');
+  btn.disabled = true;
+  btn.classList.add('analyzing');
+  btn.innerHTML = '<span class="spin"></span>Analyzing image…';
+  try{
+    if(SORTMATE_AI_ENDPOINT){
+      const result = await callVisionBackend(pendingImageData);
+      pendingAIResult = normalizeAIResult(result);
+      showAIResult(pendingAIResult);
+    }else{
+      setTimeout(() => runMockClassifier(pendingImageData), 500);
+    }
+  }catch(err){
+    console.warn('Vision backend unavailable; using demo fallback.', err);
+    setTimeout(() => runMockClassifier(pendingImageData, 'Backend unavailable — demo fallback'), 250);
+  }
+}
+
+async function callVisionBackend(dataUrl){
+  const response = await fetch(SORTMATE_AI_ENDPOINT, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({image:dataUrl})
+  });
+  if(!response.ok) throw new Error('AI backend returned HTTP '+response.status);
+  return await response.json();
+}
+
+function normalizeAIResult(raw){
+  const allowed = Object.keys(CATEGORIES);
+  let category = String(raw.category || raw.waste_stream || '').toLowerCase();
+  const aliases = {organic:'wet','food':'wet','paper':'dry','cardboard':'dry','plastic':'recyclable','metal':'recyclable','glass':'recyclable','e-waste':'ewaste','electronics':'ewaste'};
+  category = aliases[category] || category;
+  if(!allowed.includes(category)) category = 'dry';
+  let confidence = Number(raw.confidence);
+  if(confidence <= 1) confidence *= 100;
+  confidence = Math.max(0, Math.min(100, Math.round(confidence || 0)));
+  return {
+    category, confidence,
+    item: raw.item || raw.detected_item || CATEGORIES[category].label,
+    material: raw.material || 'Not specified',
+    wasteStream: raw.waste_stream || CATEGORIES[category].label,
+    action: raw.recommended_action || CATEGORIES[category].reason,
+    reason: raw.reason || raw.explanation || CATEGORIES[category].reason,
+    source:'Real vision backend'
+  };
+}
+
+function showAIResult(result){
+  pendingAIResult = result;
+  showResult(result.category, result.confidence, buildProbabilityDistribution(result.category, result.confidence));
+  document.getElementById('ai-source-badge').textContent = result.source || 'Real vision backend';
+  document.getElementById('ai-action').textContent = 'Recommended action: ' + result.action;
+  document.getElementById('ai-explanation').textContent = 'Why: ' + result.reason + (result.material && result.material !== 'Not specified' ? ' Material: '+result.material+'.' : '');
+}
+
+
+function rgbToHsl(r, g, b){
+  r/=255; g/=255; b/=255;
+  const max = Math.max(r,g,b), min = Math.min(r,g,b);
+  let h, s, l = (max+min)/2;
+  if(max === min){ h = 0; s = 0; }
+  else{
+    const d = max - min;
+    s = l > 0.5 ? d/(2-max-min) : d/(max+min);
+    switch(max){
+      case r: h = (g-b)/d + (g<b ? 6 : 0); break;
+      case g: h = (b-r)/d + 2; break;
+      default: h = (r-g)/d + 4;
+    }
+    h *= 60;
+  }
+  return { h, s, l };
+}
+
+function runMockClassifier(dataUrl, fallbackReason){
+  // Lightweight "on-device" heuristic: samples the CENTER of the photo (to avoid
+  // background/plate/table diluting the reading), converts to hue/saturation/
+  // lightness, and buckets by color signal — a stand-in for a trained CNN.
+  const img = new Image();
+  img.onload = function(){
+    const canvas = document.createElement('canvas');
+    canvas.width = 30; canvas.height = 30;
+    const ctx = canvas.getContext('2d');
+    // Sample only the middle 55% of the frame — the subject is usually centered,
+    // background/plate/table sits toward the edges.
+    const sx = img.width * 0.225, sy = img.height * 0.225;
+    const sw = img.width * 0.55, sh = img.height * 0.55;
+    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, 30, 30);
+
+    let r=0,g=0,b=0,count=0;
+    try{
+      const data = ctx.getImageData(0,0,30,30).data;
+      for(let i=0;i<data.length;i+=4){ r+=data[i]; g+=data[i+1]; b+=data[i+2]; count++; }
+      r/=count; g/=count; b/=count;
+    }catch(err){ r=120;g=140;b=110; }
+
+    const { h, s, l } = rgbToHsl(r, g, b);
+
+    // Ordered from most specific signal to least.
+    let cat;
+    if(l > 0.78 && s < 0.14){
+      cat = 'recyclable';                          // bright, near-grey/white — paper/plastic/glass/metal
+    } else if(h >= 190 && h <= 255 && s > 0.15){
+      cat = 'ewaste';                               // cool blue-grey tones — electronics, casings, cables
+    } else if(l < 0.28){
+      cat = 'hazardous';                            // dark — batteries, chemical containers
+    } else if(s > 0.30 && (h <= 160 || h >= 320)){
+      cat = 'wet';                                  // vivid red/orange/yellow/pink/green — fresh produce & food
+    } else {
+      cat = 'dry';                                  // muted/desaturated — cardboard, wrappers, mixed dry waste
+    }
+
+    // Deterministic demo confidence: never pretend this is a trained model.
+    const confidence = (l > 0.78 && s < 0.14) || (s > 0.30 && (h <= 160 || h >= 320)) ? 62 : 48;
+    const probs = buildProbabilityDistribution(cat, confidence);
+    showResult(cat, confidence, probs);
+    const demoResult = {category:cat, confidence, item:CATEGORIES[cat].label, material:'Demo / not identified by a trained model', wasteStream:CATEGORIES[cat].label, action:CATEGORIES[cat].reason, reason:fallbackReason || 'Local browser heuristic based on image color signals. This is a prototype fallback, not a trained vision model.', source:'Demo fallback'};
+    pendingAIResult = demoResult;
+    document.getElementById('ai-source-badge').textContent = 'Demo fallback';
+    document.getElementById('ai-action').textContent = 'Recommended action: ' + demoResult.action;
+    document.getElementById('ai-explanation').textContent = 'Why: ' + demoResult.reason;
+  };
+  img.src = dataUrl;
+}
+
+// Builds a plausible full probability distribution across all 5 categories,
+// with the winning category pinned to `confidence` and the remainder split
+// pseudo-randomly across the rest (mimics a softmax output for the demo).
+function buildProbabilityDistribution(winner, confidence){
+  const others = Object.keys(CATEGORIES).filter(k => k !== winner);
+  const remaining = 100 - confidence;
+  const weights = others.map(() => Math.random());
+  const weightSum = weights.reduce((a,b) => a+b, 0);
+  const probs = { [winner]: confidence };
+  others.forEach((k, i) => { probs[k] = Math.round((weights[i]/weightSum) * remaining); });
+  // fix rounding drift so it sums to ~100
+  const sum = Object.values(probs).reduce((a,b) => a+b, 0);
+  probs[winner] += (100 - sum);
+  return probs;
+}
+
+// Estimated item weight (grams), by category — illustrative ranges since we
+// have no scale input; a real deployment would read this from IoT bin sensors.
+const WEIGHT_RANGES = {
+  wet: [50, 380], dry: [15, 140], recyclable: [10, 300], hazardous: [15, 450], ewaste: [40, 750]
+};
+const IMPACT_TIPS = {
+  wet:        "Composting this prevents landfill methane — organic waste breaks down anaerobically underground and methane traps ~25x more heat than CO₂.",
+  dry:        "This doesn't have a standard recycling stream — keeping it out of wet/recyclable bins still avoids contaminating loads that could otherwise be processed.",
+  recyclable: "Recycling this avoids extracting and processing virgin raw material, which is usually the most energy-intensive step in its life cycle.",
+  hazardous:  "Never bin this with regular waste — improper disposal risks soil and groundwater contamination. Use the hazardous drop-off point.",
+  ewaste:     "E-waste holds recoverable copper, gold, and rare metals — certified e-waste recyclers reclaim these instead of losing them to landfill."
+};
+
+function showResult(cat, confidence, probs){
+  pendingCategory = cat;
+  const c = CATEGORIES[cat];
+  const tag = document.getElementById('category-tag');
+  tag.className = 'category-tag ' + c.tagClass;
+  tag.textContent = c.icon + ' ' + c.label;
+  document.getElementById('category-reason').textContent = c.reason;
+  document.getElementById('conf-fill').style.width = confidence + '%';
+  document.getElementById('conf-pct').textContent = confidence + '%';
+  const status = document.getElementById('ai-confidence-status');
+  status.className = confidence >= 80 ? '' : (confidence >= 50 ? 'conf-medium' : 'conf-low');
+  status.textContent = confidence >= 80 ? 'High confidence' : (confidence >= 50 ? 'Verification recommended' : 'Low confidence — manual classification required');
+  const review = document.getElementById('human-review-copy');
+  review.textContent = confidence < 50 ? 'AI confidence is low. Please correct the classification before logging.' : 'Please verify the AI classification before logging it.';
+  document.querySelector('#human-review-panel .btn-confirm').disabled = confidence < 50;
+  document.getElementById('verification-status').style.display = 'none';
+  pendingVerification = null;
+
+  // Weight estimate + derived insights
+  const [wMin, wMax] = WEIGHT_RANGES[cat];
+  const weightG = Math.round(wMin + Math.random() * (wMax - wMin));
+  const weightKg = weightG / 1000;
+  const co2 = +(weightKg * CO2_FACTORS[cat]).toFixed(2);
+  const impactScore = Math.round((CO2_FACTORS[cat] / 2.5) * 100); // relative to e-waste, the highest factor
+  pendingInsights = { weightG, co2, impactScore };
+
+  document.getElementById('insight-grid').innerHTML = `
+    <div class="insight-card"><div class="il">Est. weight</div><div class="iv">${weightG} g</div></div>
+    <div class="insight-card"><div class="il">CO₂e if sorted right</div><div class="iv">${co2} kg</div></div>
+    <div class="insight-card"><div class="il">Impact score</div><div class="iv">${impactScore}/100</div></div>
+  `;
+  document.getElementById('insight-note').textContent = IMPACT_TIPS[cat];
+
+  const order = Object.keys(probs).sort((a,b) => probs[b]-probs[a]);
+  let probHtml = '';
+  order.forEach(k => {
+    const cc = CATEGORIES[k];
+    probHtml += `<div class="prob-row ${k===cat?'top':''}">
+      <div class="pl">${cc.icon} ${cc.label}</div>
+      <div class="pb"><div class="pb-fill" style="width:${probs[k]}%;"></div></div>
+      <div class="pv">${probs[k]}%</div>
+    </div>`;
+  });
+  document.getElementById('prob-bars').innerHTML = probHtml;
+
+  document.getElementById('pre-analysis-box').style.display = 'none';
+  document.getElementById('post-analysis-box').style.display = 'block';
+
+  document.querySelectorAll('#correction-chips .chip').forEach(chip => {
+    chip.classList.toggle('selected', chip.dataset.cat === cat);
+    chip.onclick = () => selectCorrection(chip.dataset.cat, chip);
+  });
+}
+
+function selectCorrection(cat, el){
+  pendingCategory = cat;
+  document.querySelectorAll('#correction-chips .chip').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+
+  // Recompute the item's insights for the corrected category (same estimated
+  // weight — it's the same physical item — but CO2e/impact depend on category).
+  const c = CATEGORIES[cat];
+  const tag = document.getElementById('category-tag');
+  tag.className = 'category-tag ' + c.tagClass;
+  tag.textContent = c.icon + ' ' + c.label;
+  document.getElementById('category-reason').textContent = c.reason;
+
+  if(pendingInsights){
+    const weightKg = pendingInsights.weightG / 1000;
+    const co2 = +(weightKg * CO2_FACTORS[cat]).toFixed(2);
+    const impactScore = Math.round((CO2_FACTORS[cat] / 2.5) * 100);
+    pendingInsights.co2 = co2;
+    pendingInsights.impactScore = impactScore;
+    document.getElementById('insight-grid').innerHTML = `
+      <div class="insight-card"><div class="il">Est. weight</div><div class="iv">${pendingInsights.weightG} g</div></div>
+      <div class="insight-card"><div class="il">CO₂e if sorted right</div><div class="iv">${co2} kg</div></div>
+      <div class="insight-card"><div class="il">Impact score</div><div class="iv">${impactScore}/100</div></div>
+    `;
+  }
+  document.getElementById('insight-note').textContent = IMPACT_TIPS[cat];
+}
+
+function verifyClassification(aiAccepted){
+  if(!pendingAIResult) return;
+  if(aiAccepted){
+    if(pendingAIResult.confidence < 50) return;
+    pendingVerification = {type:'human_confirmed', aiCategory:pendingAIResult.category, finalCategory:pendingCategory, confidence:pendingAIResult.confidence, timestamp:new Date().toISOString()};
+  }else{
+    pendingVerification = {type:'human_corrected', aiCategory:pendingAIResult.category, finalCategory:pendingCategory, confidence:pendingAIResult.confidence, timestamp:new Date().toISOString()};
+  }
+  const history = JSON.parse(localStorage.getItem('sortmate_verifications') || '[]');
+  history.unshift({...pendingVerification, source:pendingAIResult.source || 'unknown'});
+  localStorage.setItem('sortmate_verifications', JSON.stringify(history.slice(0,100)));
+  const status = document.getElementById('verification-status');
+  status.style.display = 'block';
+  status.textContent = aiAccepted ? '✓ Human verified: AI classification accepted.' : '✓ Human verified: corrected classification recorded.';
+  document.getElementById('human-review-copy').textContent = 'Verification recorded. You can now log this classification.';
+}
+
+function confirmLog(){
+  if(!pendingVerification){
+    const status = document.getElementById('verification-status');
+    status.style.display = 'block';
+    status.textContent = 'Please confirm or correct the AI result before logging.';
+    return;
+  }
+  const c = CATEGORIES[pendingCategory];
+  const now = new Date();
+  const timeStr = now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+  const pts = 10;
+  points += pts;
+  streak = streak; // unchanged in this session demo
+  // Generate the Waste ID right here, at classification time. This exact
+  // string is reused as the batch ID (see createWasteBatchFromVerifiedLog),
+  // so the same ID appears on Classify, Batch Register, Matching and Pickup —
+  // nothing downstream ever mints a second, different ID for the same item.
+  const wasteId = 'B-' + Date.now().toString().slice(-7);
+  const loggedEntry = {
+    id: wasteId,
+    item: 'Photo item', category: c.label, icon: c.icon, time: timeStr, pts: pts,
+    weightG: pendingInsights ? pendingInsights.weightG : null,
+    co2: pendingInsights ? pendingInsights.co2 : null,
+    aiCategory: pendingAIResult ? pendingAIResult.category : pendingCategory,
+    finalCategory: pendingCategory,
+    aiConfidence: pendingAIResult ? pendingAIResult.confidence : null,
+    verification: pendingVerification.type,
+    classifiedAt: new Date().toISOString()
+  };
+  log.unshift(loggedEntry);
+  localStorage.setItem('sortmate_latest_verified_log', JSON.stringify(loggedEntry));
+  // Keep every dashboard metric in sync with the newly uploaded/classified image.
+  renderRecentLog();
+  renderDashboard();
+  renderHomeImpact();
+  if(document.getElementById('tab-reports')?.classList.contains('active')) renderReports();
+
+  // IMPORTANT: keep the classification result visible so the next action is explicit:
+  // Human verification → Recovery eligibility → Create recovery batch.
+  showClassificationBatchAction(loggedEntry);
+
+  // If the user is already viewing the dashboard, refresh it immediately.
+  if(document.getElementById('tab-dashboard')?.classList.contains('active')){
+    renderDashboard();
+  }
+}
+
+function showClassificationBatchAction(entry){
+  const wrap=document.getElementById('classification-batch-action');
+  const msg=document.getElementById('classification-batch-message');
+  const createBtn=document.getElementById('create-batch-from-classification-btn');
+  const matchBtn=document.getElementById('go-matching-from-classification-btn');
+  if(!wrap || !msg || !createBtn) return;
+
+  const recoveryMaterial=materialFromCategory(entry.finalCategory || pendingCategory);
+  wrap.style.display='block';
+
+  // Show the Waste ID immediately — this is the exact ID that becomes the
+  // batch ID, the matched batch ID, and the pickup's linked batch ID.
+  const idLine=`<div class="mono" style="font-size:12px;color:var(--leaf,#5FBF7E);margin-bottom:6px;">🆔 Waste ID: <b>${escapeMatchText(entry.id)}</b> — this ID stays the same through Batch Register, Matching and Pickup.</div>`;
+
+  if(recoveryMaterial){
+    msg.innerHTML=idLine+`✓ <b>Recovery eligible:</b> ${escapeMatchText(recoveryMaterial)}. Your verified classification can now be converted into a traceable waste batch.`;
+  }else{
+    msg.innerHTML=idLine+`✓ <b>Waste batch available:</b> ${escapeMatchText(entry.category)} has been human-verified. It can be tracked as a waste batch, and it's still selectable in AI Partner Match — a compatible partner just may not exist for this material.`;
+  }
+
+  createBtn.style.display='inline-block';
+  createBtn.disabled=false;
+  createBtn.dataset.logTimestamp=entry.classifiedAt || '';
+  if(matchBtn) matchBtn.style.display='none';
+}
+
+function createBatchFromClassification(){
+  const entry=JSON.parse(localStorage.getItem('sortmate_latest_verified_log') || 'null');
+  if(!entry) return;
+
+  // Match on the Waste ID itself first (the strongest possible check), and
+  // fall back to the old time-based check only for legacy records that
+  // predate the entry carrying an id at all.
+  const existing=wasteBatches.find(b=>
+    (entry.id && b.id===entry.id) ||
+    (!entry.id && b.sourceLogTime===entry.time && b.verifiedAt===entry.classifiedAt)
+  );
+  if(existing){
+    const msg=document.getElementById('classification-batch-message');
+    if(msg) msg.innerHTML=`✓ Batch <b>${existing.id}</b> already exists for this verified classification. Opening the Batch Register.`;
+    renderWasteBatches();
+    renderDashboard();
+    renderHomeImpact();
+    highlightBatchId=existing.id;
+    switchTabByNav('batches');
+    return;
+  }
+
+  const batch=createWasteBatchFromVerifiedLog(entry);
+  if(!batch) return;
+
+  const msg=document.getElementById('classification-batch-message');
+  const btn=document.getElementById('create-batch-from-classification-btn');
+  const matchBtn=document.getElementById('go-matching-from-classification-btn');
+  const recoveryEligible=!!materialFromCategory(entry.finalCategory || pendingCategory);
+
+  if(msg) msg.innerHTML=`✓ <b>Batch ${batch.id} created.</b> ${escapeMatchText(batch.material)} · ${batch.qtyKg} kg · ${recoveryEligible ? 'Ready for AI-assisted partner matching.' : 'Saved for waste-pathway tracking — still selectable in AI Partner Match.'}`;
+  if(btn) btn.style.display='none';
+  // Carry the exact new batch ID forward instead of a blind tab switch. Every
+  // batch — recovery-eligible or not — becomes selectable in AI Partner
+  // Match the moment it's created; if no partner accepts the material,
+  // that screen says so explicitly rather than hiding the batch entirely.
+  if(matchBtn){
+    matchBtn.style.display='inline-block';
+    matchBtn.dataset.batchId=batch.id;
+    matchBtn.textContent='🤝 Find AI recovery partner for ' + batch.id;
+  }
+
+  renderWasteBatches();
+  renderDashboard();
+  renderHomeImpact();
+
+  // The classification action is the entry point; once the batch is created,
+  // take the user directly to the Batch Register and highlight the exact
+  // batch ID that was just generated, so it's unmistakably the same ID that
+  // carries forward into matching and pickup.
+  highlightBatchId=batch.id;
+  switchTabByNav('batches');
+}
+
+function resetClassify(){
+  document.getElementById('classify-result').style.display = 'none';
+  document.getElementById('photo-input').value = '';
+  pendingImageData = null;
+  pendingInsights = null;
+  pendingAIResult = null;
+  pendingVerification = null;
+  const wrap=document.getElementById('classification-batch-action');
+  if(wrap) wrap.style.display='none';
+  const msg=document.getElementById('classification-batch-message');
+  if(msg) msg.textContent='';
+}
+
+function materialFromCategory(category){
+  return ({recyclable:'Mixed Recyclable', ewaste:'E-Waste', dry:'Paper/Cardboard'})[category] || null;
+}
+
+function createWasteBatchFromVerifiedLog(entry){
+  const finalCategory=entry.finalCategory || pendingCategory;
+  const recoveryMaterial=materialFromCategory(finalCategory);
+  const material=recoveryMaterial || (CATEGORIES[finalCategory] ? CATEGORIES[finalCategory].label : entry.category);
+  if(!material) return null;
+
+  const qtyKg = entry.weightG ? Math.max(0.1, Number(entry.weightG)/1000) : 0.3;
+  const batch = {
+    // Reuse the exact Waste ID generated at classification time (entry.id).
+    // Only fall back to minting a new one for older records that predate it,
+    // so a batch's ID never diverges from the ID shown during classification.
+    id: entry.id || ('B-' + Date.now().toString().slice(-7)),
+    material,
+    category: finalCategory,
+    qtyKg: Number(qtyKg.toFixed(2)),
+    source: user.hostel || 'User location',
+    status: recoveryMaterial ? 'Ready for partner matching' : 'Pathway review',
+    recoveryEligible: !!recoveryMaterial,
+    createdVia: 'verified_classification',
+    createdAt: new Date().toISOString(),
+    aiConfidence: entry.aiConfidence,
+    verification: entry.verification,
+    verifiedAt: entry.classifiedAt,
+    sourceLogTime: entry.time
+  };
+  wasteBatches.unshift(batch);
+  localStorage.setItem('sortmate_waste_batches', JSON.stringify(wasteBatches));
+  renderWasteBatches();
+  renderPartnerMatching();
+  return batch;
+}
+
+function prepareVerifiedBatchFromLog(entry){
+  const material = materialFromCategory(entry.finalCategory || entry.category);
+  const note = document.getElementById('batch-source-classification');
+  const btn = document.getElementById('create-verified-batch-btn');
+  const mat = document.getElementById('batch-material');
+  const qty = document.getElementById('batch-qty');
+  const source = document.getElementById('batch-source');
+  if(!material){
+    if(note) note.innerHTML='ℹ️ This verified category is not currently routed through the recovery-partner workflow. Use the recommended disposal pathway instead.';
+    if(btn) btn.disabled=true;
+    return;
+  }
+  if(mat) mat.value=material;
+  if(qty) qty.value=entry.weightG ? Math.max(0.1, Number(entry.weightG)/1000).toFixed(2) : '0.30';
+  if(source) source.value=user.hostel || 'User location';
+  if(note) note.innerHTML=`✓ <b>Human-verified ${escapeMatchText(material)}</b> · AI confidence ${entry.aiConfidence ?? '—'}% · ${entry.verification === 'human_corrected' ? 'classification corrected by human' : 'AI result confirmed'}. This verified result can now become a recovery batch.`;
+  if(btn){
+    btn.disabled=false;
+    btn.dataset.logTimestamp=entry.classifiedAt || '';
+  }
+}
+
+function createBatchFromLatestVerification(){
+  const entry = JSON.parse(localStorage.getItem('sortmate_latest_verified_log') || 'null');
+  if(!entry){
+    const note=document.getElementById('batch-source-classification');
+    if(note) note.textContent='Please classify and human-verify a recovery-eligible item first.';
+    return;
+  }
+  const material=materialFromCategory(entry.aiCategory === entry.category ? entry.aiCategory : (Object.keys(CATEGORIES).find(k=>CATEGORIES[k].label===entry.category)||''));
+  if(!material){
+    const note=document.getElementById('batch-source-classification');
+    if(note) note.textContent='This verified material is not currently recovery-eligible in SortMate.';
+    return;
+  }
+  const qtyKg=Number(document.getElementById('batch-qty').value);
+  if(!qtyKg || qtyKg<=0) return;
+  const batch=createWasteBatchFromVerifiedLog({...entry, weightG:qtyKg*1000});
+  if(batch){
+    const note=document.getElementById('batch-source-classification');
+    if(note) note.innerHTML=`✓ Batch <b>${batch.id}</b> created from the verified classification and is ready for AI-assisted partner matching.`;
+    document.getElementById('create-verified-batch-btn').disabled=true;
+    renderPartnerMatching();
+  }
+}
+
+function createManualWasteBatch(){
+  // Backward-compatible guard: batches cannot be created independently of verification.
+  createBatchFromLatestVerification();
+}
+
+
+function renderWasteBatches(){
+  const list=document.getElementById('waste-batch-list');
+  const pill=document.getElementById('batch-count-pill');
+  if(!list) return;
+  if(pill) pill.textContent=wasteBatches.length;
+  if(!wasteBatches.length){ list.innerHTML='<div class="batch-empty">No verified recovery batches yet. Confirm a recyclable/e-waste classification to create one automatically.</div>'; return; }
+  list.innerHTML=wasteBatches.map(b=>`<div class="batch-card${b.id===highlightBatchId?' batch-card-highlight':''}" id="batch-row-${escapeMatchText(b.id)}" style="margin-bottom:10px;">
+    <div style="display:flex;justify-content:space-between;gap:10px;align-items:center;">
+      <div><strong>${b.id}</strong> · ${b.material}</div><span class="batch-status">${b.status}</span>
+    </div>
+    <div class="batch-meta"><span>⚖️ ${b.qtyKg} kg</span><span>📍 ${escapeMatchText(b.source)}</span><span>🕒 ${new Date(b.createdAt).toLocaleString()}</span>${b.aiConfidence!==null?`<span>🤖 ${b.aiConfidence}% AI confidence</span>`:''}<span>✓ ${b.verification==='human_corrected'?'Human corrected':'Human verified'}</span>${b.partnerName?`<span>🤝 ${escapeMatchText(b.partnerName)}</span>`:''}</div>
+  </div>`).join('');
+  if(highlightBatchId){
+    const row=document.getElementById('batch-row-'+highlightBatchId);
+    if(row){
+      row.scrollIntoView({behavior:'smooth', block:'center'});
+      setTimeout(()=>row.classList.remove('batch-card-highlight'), 2600);
+    }
+    highlightBatchId=null;
+  }
+}
+
+/* ---------------- Guided flow: carry the exact batch ID between tabs ---------------- */
+function goToMatchingForBatch(batchId){
+  if(!batchId) { switchTabByNav('matching'); return; }
+  switchTabByNav('matching'); // renders the dropdown from the live wasteBatches array first
+  const select=document.getElementById('match-batch-select');
+  if(select && [...select.options].some(o=>o.value===batchId)){
+    select.value=batchId;
+    updateMatchActiveIdBanner(); // setting .value directly doesn't fire onchange
+    findPartnerMatches(); // auto-run the match for the exact batch that was just created
+  }
+}
+
+function goToPickupForBatch(batchId){
+  if(!batchId) { switchTabByNav('pickup'); return; }
+  switchTabByNav('pickup');
+  renderPickupBatchOptions(); // refresh with this newly-matched batch as an eligible option
+  const select=document.getElementById('pu-batch');
+  if(select && [...select.options].some(o=>o.value===batchId)){
+    select.value=batchId;
+    syncPickupBatch(); // pull partner/material/location straight from that exact batch record
+  }
+}
+
+
+/* ---------------- Phase 5: Explainable AI Partner Matching ---------------- */
+const SORTMATE_PARTNERS = [
+  {id:'DP-01', name:'GreenLoop Recovery', type:'aggregator', materials:['Plastic','Paper/Cardboard','Glass','Metal','Mixed Recyclable'], capacity:60, minQty:1, distance:4.8, available:true, verified:true},
+  {id:'DP-02', name:'ReCircle Materials Hub', type:'recycler', materials:['Plastic','HDPE','PET','Paper/Cardboard','Metal','Mixed Recyclable'], capacity:120, minQty:5, distance:11.5, available:true, verified:true},
+  {id:'DP-03', name:'City Waste Collective', type:'picker', materials:['Plastic','Paper/Cardboard','Glass','Metal','Mixed Recyclable'], capacity:25, minQty:0.5, distance:7.2, available:true, verified:true},
+  {id:'DP-04', name:'EcoCycle E-Waste Desk', type:'recycler', materials:['E-Waste'], capacity:80, minQty:1, distance:15.4, available:true, verified:true},
+  {id:'DP-05', name:'Campus Recovery Partner', type:'aggregator', materials:['Plastic','Paper/Cardboard','E-Waste','Mixed Recyclable'], capacity:15, minQty:1, distance:3.1, available:false, verified:true},
+  {id:'DP-06', name:'MaterialLink Recycler', type:'recycler', materials:['Glass','Metal','Plastic','Paper/Cardboard'], capacity:200, minQty:20, distance:21.0, available:true, verified:false}
+];
+
+function escapeMatchText(v){
+  return String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function normalizeWasteBatches(){
+  // Single source of truth: AI Partner Match can only read batches that actually
+  // exist in the Waste Batches register. Older prototype versions could leave
+  // duplicate records in localStorage, so consolidate them here.
+  // Keyed strictly by the Waste ID (b.id) — never by timestamps — so two
+  // records can only ever be merged if they are literally the same ID.
+  // This guarantees the dedup pass can never silently swap one batch's ID
+  // for another's.
+  const seen=new Map();
+  wasteBatches=(Array.isArray(wasteBatches)?wasteBatches:[]).filter(b=>b && b.id).map(b=>({...b, createdVia:b.createdVia || 'verified_classification'}));
+  wasteBatches.forEach(b=>{
+    const existing=seen.get(b.id);
+    if(!existing){
+      seen.set(b.id,b);
+    }else{
+      // Keep the record with the more complete/current journey state.
+      const existingScore=(existing.partnerId?4:0)+(existing.journey?2:0)+(existing.status==='Partner Matched'?1:0);
+      const newScore=(b.partnerId?4:0)+(b.journey?2:0)+(b.status==='Partner Matched'?1:0);
+      if(newScore>existingScore) seen.set(b.id,b);
+    }
+  });
+  wasteBatches=Array.from(seen.values());
+  localStorage.setItem('sortmate_waste_batches',JSON.stringify(wasteBatches));
+}
+
+function getMatchableBatches(){
+  // Every batch that exists in the Waste Batches register is selectable
+  // here the moment it's created — regardless of material or recovery
+  // eligibility. If no partner accepts that material, "Find AI matches"
+  // says so explicitly instead of hiding the batch from the dropdown.
+  return wasteBatches.filter(b => b && b.id);
+}
+
+function renderPartnerMatching(){
+  const select=document.getElementById('match-batch-select');
+  const results=document.getElementById('partner-match-results');
+  if(!select) return;
+  const batches=getMatchableBatches();
+  const previousId=select.value;
+  select.innerHTML=batches.length ? batches.map(b=>`<option value="${escapeMatchText(b.id)}">${escapeMatchText(b.id)} — ${escapeMatchText(b.material)} — ${b.qtyKg} kg</option>`).join('') : '<option value="">No matchable batches</option>';
+  if(batches.some(b=>b.id===previousId)) select.value=previousId;
+  updateMatchActiveIdBanner();
+  if(!batches.length){
+    if(results) results.innerHTML='<div class="batch-empty">No partner-matchable batch exists in the Waste Batches register. Create a verified recovery batch first.</div>';
+    return;
+  }
+  if(results && !results.dataset.hasResults) results.innerHTML='<div class="batch-empty">Select a batch and click “Find AI matches”. The Batch ID shown here is the same ID stored in Waste Batches.</div>';
+}
+
+function updateMatchActiveIdBanner(){
+  const select=document.getElementById('match-batch-select');
+  const banner=document.getElementById('match-active-id');
+  if(!select || !banner) return;
+  if(select.value){
+    banner.style.display='block';
+    banner.innerHTML=`🆔 Matching Waste ID: <b>${escapeMatchText(select.value)}</b> — same ID as in Waste Batches.`;
+  }else{
+    banner.style.display='none';
+    banner.textContent='';
+  }
+}
+
+function scorePartner(partner,batch,radius,type){
+  const materialOK=partner.materials.includes(batch.material);
+  const capacityOK=partner.capacity>=batch.qtyKg;
+  const minQtyOK=batch.qtyKg>=partner.minQty;
+  const distanceOK=partner.distance<=radius;
+  const typeOK=type==='any'||partner.type===type;
+  if(!materialOK||!capacityOK||!minQtyOK||!distanceOK||!typeOK) return null;
+  let score=50+20+10+10+(partner.available?5:0)+(partner.verified?5:0);
+  const reasons=[
+    `Accepts ${batch.material}`,
+    `capacity ${partner.capacity} kg ≥ ${batch.qtyKg} kg`,
+    `minimum quantity ${partner.minQty} kg met`,
+    `${partner.distance} km away`,
+    partner.available?'currently available':'currently unavailable',
+    partner.verified?'verified demo partner':'unverified partner'
+  ];
+  return {...partner,score,reasons};
+}
+
+function findPartnerMatches(){
+  const id=document.getElementById('match-batch-select').value;
+  const batch=wasteBatches.find(b=>b.id===id);
+  const results=document.getElementById('partner-match-results');
+  results.dataset.hasResults='1';
+  if(!batch){results.innerHTML='<div class="batch-empty">No eligible batch selected.</div>';return;}
+  const radius=Math.max(1,Number(document.getElementById('match-radius').value)||25);
+  const type=document.getElementById('match-type').value;
+  const matches=SORTMATE_PARTNERS.map(p=>scorePartner(p,batch,radius,type)).filter(Boolean).sort((a,b)=>b.score-a.score);
+  if(!matches.length){results.innerHTML=`<div class="batch-empty">No compatible partner found within ${radius} km for ${escapeMatchText(batch.material)} (${batch.qtyKg} kg). Try a larger radius or another partner type.</div>`;return;}
+  results.innerHTML=matches.map((p,i)=>`<div class="batch-card" style="margin-bottom:12px;">
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;">
+      <div><strong>${i===0?'🏆 ':''}${escapeMatchText(p.name)}</strong><div class="batch-meta"><span>${escapeMatchText(p.type)}</span><span>📍 ${p.distance} km</span><span>⚖️ ${p.capacity} kg capacity</span></div></div>
+      <span class="batch-status">${p.score}/100 match</span>
+    </div>
+    <div style="margin-top:10px;font-size:12px;color:var(--text-faint);">${p.verified?'✓ Registered prototype partner':'⚠ Unverified prototype partner'} · ${p.available?'Available':'Currently unavailable'}</div>
+    <div style="margin-top:8px;font-size:13px;color:var(--text-dim);"><b>Why matched:</b> ${p.reasons.map(escapeMatchText).join(' · ')}.</div>
+    <button class="btn-confirm" style="margin-top:12px;" onclick="assignPartner('${p.id}','${batch.id}')">Assign this partner</button>
+  </div>`).join('');
+}
+
+function assignPartner(partnerId,batchId){
+  const batch=wasteBatches.find(b=>b.id===batchId);
+  const partner=SORTMATE_PARTNERS.find(p=>p.id===partnerId);
+  if(!batch||!partner) return;
+  batch.partnerId=partner.id;
+  batch.partnerName=partner.name;
+  batch.partnerType=partner.type;
+  batch.matchScore=scorePartner(partner,batch,Number(document.getElementById('match-radius').value)||25,document.getElementById('match-type').value)?.score || null;
+  batch.status='Partner Matched';
+  batch.matchedAt=new Date().toISOString();
+  localStorage.setItem('sortmate_waste_batches',JSON.stringify(wasteBatches));
+  renderWasteBatches();
+  renderPartnerMatching();
+  document.getElementById('partner-match-results').dataset.hasResults='1';
+  document.getElementById('partner-match-results').innerHTML=`<div class="batch-card"><strong>✓ Partner assigned</strong><div class="batch-meta"><span>${escapeMatchText(batch.id)}</span><span>${escapeMatchText(partner.name)}</span><span>${batch.matchScore}/100 match</span></div><p style="font-size:13px;color:var(--text-dim);margin-top:10px;">The batch is now marked <b>Partner Matched</b>. The assigned partner will automatically carry into pickup scheduling. No real pickup has been booked; this is a prototype assignment.</p><button class="btn-confirm" style="margin-top:10px;" onclick="goToPickupForBatch('${escapeMatchText(batch.id)}')">🚚 Schedule pickup for ${escapeMatchText(batch.id)}</button></div>`;
+}
+
+function renderRecentLog(){
+  const body = document.getElementById('recent-log-body');
+  body.innerHTML = '';
+  log.slice(0,5).forEach(entry => {
+    body.innerHTML += `<tr><td>${entry.icon} ${entry.item}</td><td>${entry.category}</td><td>${entry.time}</td><td class="pt">+${entry.pts}</td></tr>`;
+  });
+  if(log.length === 0){ body.innerHTML = '<tr><td colspan="4" style="color:var(--text-faint);">Nothing logged yet — classify your first item above.</td></tr>'; }
+}
+
+/* ---------------- Dashboard ---------------- */
+function renderDashboard(){
+  document.getElementById('dash-total').textContent = log.length;
+  document.getElementById('dash-points').textContent = points;
+  document.getElementById('dash-accuracy').textContent = log.length ? '100%' : '—';
+  document.getElementById('dash-streak').textContent = streak;
+  document.getElementById('dash-history-count').textContent = log.length + (log.length === 1 ? ' entry' : ' entries');
+
+  const counts = {};
+  Object.keys(CATEGORIES).forEach(k => counts[k] = 0);
+  log.forEach(e => {
+    const key = Object.keys(CATEGORIES).find(k => CATEGORIES[k].label === e.category);
+    if(key) counts[key]++;
+  });
+
+  // Real per-item CO2e, summed from each logged item's own AI-estimated weight
+  // (falls back to a 0.3kg assumption only for older entries that predate this field).
+  let dashCo2 = 0;
+  log.forEach(e => {
+    if(typeof e.co2 === 'number'){ dashCo2 += e.co2; }
+    else {
+      const key = Object.keys(CATEGORIES).find(k => CATEGORIES[k].label === e.category);
+      if(key) dashCo2 += 0.3 * CO2_FACTORS[key];
+    }
+  });
+  document.getElementById('dash-co2').textContent = dashCo2.toFixed(1) + ' kg';
+
+  // Latest AI scan snapshot
+  const scanPanel = document.getElementById('latest-scan-panel');
+  if(log.length > 0){
+    const latest = log[0];
+    const key = Object.keys(CATEGORIES).find(k => CATEGORIES[k].label === latest.category);
+    const c = CATEGORIES[key] || {};
+    scanPanel.style.display = 'block';
+    document.getElementById('latest-scan-body').innerHTML = `
+      <div class="scan-card">
+        <div class="sc-icon">${latest.icon}</div>
+        <div class="sc-body">
+          <h4>${latest.category}</h4>
+          <p>Logged at ${latest.time} · +${latest.pts} pts</p>
+        </div>
+      </div>
+      <div class="scan-metrics">
+        <div><b>${latest.weightG != null ? latest.weightG + ' g' : '—'}</b><span>Est. weight</span></div>
+        <div><b>${latest.co2 != null ? latest.co2 + ' kg' : '—'}</b><span>CO₂e saved</span></div>
+        <div><b>${log.length}</b><span>Total scans</span></div>
+      </div>
+    `;
+  } else {
+    scanPanel.style.display = 'none';
+  }
+
+  const max = Math.max(1, ...Object.values(counts));
+  let barsHtml = '';
+  Object.keys(CATEGORIES).forEach(k => {
+    const c = CATEGORIES[k];
+    const pct = Math.round((counts[k]/max)*100);
+    barsHtml += `<div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+      <div style="width:110px; font-size:13px; color:var(--text-dim);">${c.icon} ${c.label}</div>
+      <div style="flex:1; background:var(--surface-2); border-radius:4px; height:10px; overflow:hidden;">
+        <div style="width:${pct}%; background:var(--leaf); height:100%;"></div>
+      </div>
+      <div style="width:22px; text-align:right; font-size:12px; color:var(--text-faint);">${counts[k]}</div>
+    </div>`;
+  });
+  if(log.length === 0){ barsHtml = '<p style="font-size:12.5px; color:var(--text-faint);">Classify a few items to see your category breakdown here.</p>'; }
+  document.getElementById('dash-bars').innerHTML = barsHtml;
+
+  const histBody = document.getElementById('history-log-body');
+  histBody.innerHTML = '';
+  log.forEach(entry => {
+    histBody.innerHTML += `<tr><td>${entry.icon} ${entry.item}</td><td>${entry.category}</td><td>${entry.time}</td><td class="pt">+${entry.pts}</td></tr>`;
+  });
+  if(log.length === 0){ histBody.innerHTML = '<tr><td colspan="4" style="color:var(--text-faint);">No history yet.</td></tr>'; }
+
+  renderDashRank();
+  renderDashboardImpact();
+  renderDashboardInsights();
+}
+
+function renderDashboardInsights(){
+  const el=document.getElementById('dashboard-insights');
+  if(!el) return;
+  const x=getWasteImpact();
+  const cards=[];
+  const counts={};
+  log.forEach(e=>{ counts[e.category]=(counts[e.category]||0)+1; });
+  const top=Object.entries(counts).sort((a,b)=>b[1]-a[1])[0];
+
+  if(!log.length){
+    el.innerHTML=`
+      <div class="dashboard-insight"><div class="di-icon">📷</div><div><b>Start with one waste item</b><p>Upload an item to unlock personalized sorting, impact and recovery insights.</p><button class="btn-secondary" onclick="switchTabByNav('classify')">Classify waste →</button></div></div>
+      <div class="dashboard-insight"><div class="di-icon">🧾</div><div><b>Your journey will build automatically</b><p>After verification, SortMate creates a recovery batch and lets you track it through pickup and recovery.</p></div></div>`;
+    return;
+  }
+
+  const corrected=log.filter(e=>e.verification==='human_corrected').length;
+  const verified=log.filter(e=>e.verification==='human_confirmed'||e.verification==='human_corrected').length;
+  const verificationRate=log.length?Math.round(verified/log.length*100):0;
+  const pending=wasteBatches.filter(b=>currentJourneyStatus(b)!=='Recovered').length;
+  const active=wasteBatches.filter(b=>currentJourneyStatus(b)!=='Recovered' && (b.partnerId||b.journey)).sort((a,b)=>new Date(b.lastUpdatedAt||b.createdAt||0)-new Date(a.lastUpdatedAt||a.createdAt||0))[0];
+  const co2PerKg=x.weightKg?x.co2/x.weightKg:0;
+
+  cards.push(`<div class="dashboard-insight"><div class="di-icon">${top?'📦':'📊'}</div><div><b>Your main waste pattern</b><p>${top?`<strong>${escapeMatchText(top[0])}</strong> is your most frequently logged category with <strong>${top[1]}</strong> item${top[1]===1?'':'s'}.`: 'Keep logging items to reveal your waste pattern.'}</p></div></div>`);
+  cards.push(`<div class="dashboard-insight"><div class="di-icon">🎯</div><div><b>Verification quality</b><p>${verificationRate}% of logged items have a human verification record.${corrected?` ${corrected} item${corrected===1?' was':'s were'} corrected after AI classification.`:' AI results have not needed a recorded correction yet.'}</p></div></div>`);
+  cards.push(`<div class="dashboard-insight"><div class="di-icon">🌍</div><div><b>Impact efficiency</b><p>Your current logged activity represents about <strong>${co2PerKg.toFixed(2)} kg CO₂e per kg</strong> of identified waste in the prototype estimate. This is an estimate, not an audited carbon claim.</p></div></div>`);
+  cards.push(`<div class="dashboard-insight"><div class="di-icon">🚚</div><div><b>Recovery bottleneck</b><p>${pending?`You have <strong>${pending}</strong> batch${pending===1?'':'es'} that ${pending===1?'is':'are'} not yet verified as recovered.`:'All stored batches are currently marked recovered.'}${active?` Your active journey is <strong>${escapeMatchText(currentJourneyStatus(active))}</strong>.`:''}</p>${active?`<button class="btn-secondary" onclick="switchTabByNav('journey')">Continue journey →</button>`:''}</div></div>`);
+  cards.push(`<div class="dashboard-insight"><div class="di-icon">💡</div><div><b>Next best action</b><p>${active?`Complete the next recovery step for <strong>${escapeMatchText(active.id)}</strong> so the impact dashboard can move from identified waste to verified recovery.`:x.recyclableKg>0?`Match your recovery-eligible material with a partner and schedule a pickup to turn identified waste into traceable recovery.`:'Classify more items to build a reliable personal waste profile.'}</p></div></div>`);
+  el.innerHTML=cards.join('');
+}
+
+function renderDashboardImpact(){
+  const banner=document.getElementById('dashboard-impact-banner');
+  const center=document.getElementById('dashboard-journey-center');
+  if(!banner||!center) return;
+  const x=getWasteImpact();
+  const totalRecovered=x.recoveredKg;
+  const recoveryRate=x.weightKg>0 ? Math.min(100,(totalRecovered/x.weightKg)*100) : 0;
+  banner.innerHTML=`<div class="impact-banner-inner"><div class="impact-banner-copy"><span class="hero-kicker">LIVE IMPACT FROM YOUR ACTIVITY</span><h2>${x.co2.toFixed(1)} kg CO₂e estimated avoided</h2><p>Every figure is linked to your logged waste and recovery journey. Estimated impact is shown separately from verified recovery.</p><div class="impact-detail-grid"><div><b>${x.weightKg.toFixed(2)} kg</b><span>Waste identified</span></div><div><b>${x.recyclableKg.toFixed(2)} kg</b><span>Recovery-eligible</span></div><div><b>${totalRecovered.toFixed(2)} kg</b><span>Verified recovered</span></div><div><b>${recoveryRate.toFixed(0)}%</b><span>Recovery rate</span></div></div></div><div class="impact-banner-actions"><button class="btn-confirm" onclick="switchTabByNav('classify')">📷 Add another item</button><button class="btn-secondary" onclick="switchTabByNav('journey')">🧾 Follow recovery</button></div></div>`;
+  const active=wasteBatches.filter(b=>currentJourneyStatus(b)!=='Recovered' && (b.partnerId||b.journey)).sort((a,b)=>new Date(b.lastUpdatedAt||b.createdAt||0)-new Date(a.lastUpdatedAt||a.createdAt||0))[0];
+  if(active){
+    const idx=journeyIndex(currentJourneyStatus(active));
+    center.innerHTML=`<div class="journey-center-card dashboard"><div class="journey-center-head"><div><span class="hero-kicker">RECOVERY IN MOTION</span><h3>${esc(active.id)} · ${esc(active.material)}</h3><p>${active.qtyKg} kg · ${esc(currentJourneyStatus(active))}${active.partnerName?' · '+esc(active.partnerName):''}</p></div><button class="btn-secondary" onclick="switchTabByNav('journey')">View journey →</button></div><div class="journey-center-track">${JOURNEY_STEPS.map((st,i)=>`<div class="jct-step ${i<=idx?'done':''} ${i===idx?'current':''}"><span>${i<=idx?'✓':i+1}</span><small>${st}</small></div>`).join('')}</div></div>`;
+  }else{
+    center.innerHTML=`<div class="journey-center-card empty"><div><span class="hero-kicker">WASTE JOURNEY IS THE CORE</span><h3>No active recovery journey yet.</h3><p>Your dashboard will place the latest batch here once a partner is matched.</p></div><button class="btn-confirm" onclick="switchTabByNav('batches')">View batches →</button></div>`;
+  }
+}
+
+
+function renderDashRank(){
+  const rows = [...individualsBase, { name: user.name, pts: points, me:true }];
+  rows.sort((a,b) => b.pts - a.pts);
+  const myIndex = rows.findIndex(r => r.me);
+  const myRank = myIndex + 1;
+  const ahead = myIndex > 0 ? rows[myIndex - 1] : null;
+  const gap = ahead ? ahead.pts - points : 0;
+  const topPts = rows[0].pts || 1;
+  const pct = Math.min(100, Math.round((points/topPts)*100));
+
+  document.getElementById('dash-rank').innerHTML = `
+    <div class="rank-hero"><span class="rn">#${myRank}</span><span class="rl">of ${rows.length} students tracked</span></div>
+    <div class="rank-progress"><div class="rank-progress-fill" style="width:${pct}%;"></div></div>
+    <div class="rank-note">${ahead ? gap + ' pts behind ' + ahead.name : 'You\'re in the lead — nice work.'}</div>
+  `;
+}
+
+/* ---------------- Leaderboard ---------------- */
+const individualsBase = [
+  {name:"Rhea Kapoor", hostel:"Hostel B — Ganga", pts:840},
+  {name:"Vikram Rao", hostel:"Hostel A — Kaveri", pts:790},
+  {name:"Sana Iyer", hostel:"Hostel C — Yamuna", pts:715},
+  {name:"Dev Prakash", hostel:"Day Scholars", pts:640},
+  {name:"Meera Nair", hostel:"Hostel B — Ganga", pts:610}
+];
+const hostelsBase = [
+  {name:"Hostel B — Ganga", pts:4210},
+  {name:"Hostel A — Kaveri", pts:3860},
+  {name:"Hostel C — Yamuna", pts:3520},
+  {name:"Day Scholars", pts:2990}
+];
+let lbMode = 'individual';
+
+function setLbMode(mode, btn){
+  lbMode = mode;
+  document.querySelectorAll('.tabs-row button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderLeaderboard();
+}
+
+function renderLeaderboard(){
+  const list = document.getElementById('lb-list');
+  list.innerHTML = '';
+  if(lbMode === 'individual'){
+    let rows = [...individualsBase, {name: user.name + ' (you)', hostel: user.hostel, pts: points, me:true}];
+    rows.sort((a,b) => b.pts - a.pts);
+    rows.forEach((r, i) => {
+      list.innerHTML += `<div class="lb-row ${i<3?'top':''} ${r.me?'me':''}">
+        <div class="lb-rank">${i+1}</div>
+        <div class="lb-name">${r.name}<span>${r.hostel}</span></div>
+        <div class="lb-pts">${r.pts} pts</div>
+      </div>`;
+    });
+  } else {
+    let rows = hostelsBase.map(h => ({...h}));
+    const match = rows.find(h => h.name === user.hostel);
+    if(match) match.pts += points;
+    rows.sort((a,b) => b.pts - a.pts);
+    rows.forEach((r, i) => {
+      list.innerHTML += `<div class="lb-row ${i<3?'top':''} ${r.name===user.hostel?'me':''}">
+        <div class="lb-rank">${i+1}</div>
+        <div class="lb-name">${r.name}</div>
+        <div class="lb-pts">${r.pts} pts</div>
+      </div>`;
+    });
+  }
+}
+
+/* ---------------- Chatbot (keyword FAQ) ---------------- */
+const FAQ = [
+  { keys:["pizza","pizza box"], a:"If it's greasy or has cheese stuck to it, it's dry/general waste — the oil contaminates recycling. A clean, grease-free lid can go in recyclables." },
+  { keys:["chip","chips","packet","wrapper"], a:"Most chip packets are multi-layer plastic and foil — not recyclable in standard bins. They go in dry waste unless your campus has a dedicated multi-layer plastic collection." },
+  { keys:["battery","batteries"], a:"Never put batteries in a regular bin — they're hazardous. Drop them at the E-Waste & Hazardous Collection point (see the Drop-off Points tab)." },
+  { keys:["medicine","tablet","strip","pharma"], a:"Medicine strips and expired tablets count as hazardous waste. Take them to the Health Centre drop box or the hazardous waste point." },
+  { keys:["tube light","bulb","cfl","fluorescent"], a:"Tube lights and CFLs contain mercury — hazardous waste, not glass recycling. Drop at the e-waste point." },
+  { keys:["banana","peel","fruit","vegetable","food"], a:"Food scraps and peels are wet waste — they go straight into the compost bin." },
+  { keys:["cardboard","paper","newspaper"], a:"Clean, dry paper and cardboard are recyclable — flatten boxes before binning them." },
+  { keys:["plastic bottle","bottle"], a:"Rinse it out and it's recyclable. If it's still got liquid or food residue, rinse first — contaminated bottles often get rejected at the recycling stage." },
+  { keys:["cable","charger","wire","phone","laptop"], a:"Electronics and cables are e-waste — never in regular bins. Use the e-waste collection point." },
+  { keys:["glass"], a:"Clean glass bottles and jars are recyclable. Broken glass should be wrapped and marked, then placed in dry waste to protect handlers." }
+];
+
+function addMsg(text, who){
+  const win = document.getElementById('chat-window');
+  const div = document.createElement('div');
+  div.className = 'msg ' + who;
+  div.textContent = text;
+  win.appendChild(div);
+  win.scrollTop = win.scrollHeight;
+}
+
+function botReply(question){
+  const q = question.toLowerCase();
+  const match = FAQ.find(f => f.keys.some(k => q.includes(k)));
+  if(match) return match.a;
+  return "I don't have a specific rule for that yet — as a general guide: food scraps go in wet waste, clean paper/plastic/glass/metal go in recyclables, anything else non-organic goes in dry waste, and batteries/chemicals/medicine/electronics always go to the special drop-off point.";
+}
+
+function sendChat(){
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if(!text) return;
+  addMsg(text, 'user');
+  input.value = '';
+  setTimeout(() => addMsg(botReply(text), 'bot'), 350);
+}
+
+function askSuggested(text){
+  addMsg(text, 'user');
+  setTimeout(() => addMsg(botReply(text), 'bot'), 350);
+}
+
+/* ---------------- Locator ---------------- */
+const dropoffs = [
+  { icon:"🔋", name:"E-Waste & Battery Point", detail:"Behind the Main Block, near the workshop entrance. Open Mon–Sat, 9am–5pm.", dist:"180 m" },
+  { icon:"💊", name:"Health Centre Medicine Box", detail:"Reception desk, campus Health Centre. Accepts expired medicine and strips.", dist:"420 m" },
+  { icon:"☣️", name:"Hazardous Waste Collection", detail:"Facilities yard, gate 2. Chemicals, paints, and batteries — staff-assisted drop-off only.", dist:"650 m" },
+  { icon:"♻️", name:"Dry Recyclables Depot", detail:"Beside the canteen loading bay. Clean paper, plastic, glass, and metal.", dist:"90 m" }
+];
+
+function renderLocator(){
+  const list = document.getElementById('locator-list');
+  list.innerHTML = '';
+  dropoffs.forEach(d => {
+    list.innerHTML += `<div class="locator-card">
+      <div class="locator-icon">${d.icon}</div>
+      <div><h4>${d.name}</h4><p>${d.detail}</p></div>
+      <div class="dist">${d.dist}</div>
+    </div>`;
+  });
+}
+
+/* ---------------- Pickup & Scheduling + Phase 6 Journey ---------------- */
+const JOURNEY_STEPS = [
+  'Created', 'Human Verified', 'Partner Matched', 'Pickup Scheduled',
+  'Pickup Accepted', 'Collected', 'Sent to Recycler', 'Recovered'
+];
+
+let pickups = JSON.parse(localStorage.getItem('sortmate_pickups') || '[]');
+const PICKUP_LABELS = { ewaste:"E-waste", hazardous:"Hazardous", "bulk-dry":"Bulk dry / recyclables", "bulk-wet":"Bulk wet waste" };
+const PICKUP_ICONS = { ewaste:"🔌", hazardous:"⚠️", "bulk-dry":"📦", "bulk-wet":"🥬" };
+
+function savePickups(){ localStorage.setItem('sortmate_pickups', JSON.stringify(pickups)); }
+function saveBatches(){ localStorage.setItem('sortmate_waste_batches', JSON.stringify(wasteBatches)); }
+function esc(v){ return String(v ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// Keep pickup records permanently attached to the canonical Waste Batch record.
+// Older prototype data may contain a stale/mismatched batchId; repair it when
+// there is an unambiguous current matched batch for the same partner.
+function normalizePickupLinks(){
+  if(!Array.isArray(pickups)) pickups=[];
+  let changed=false;
+  const validBatchIds=new Set(wasteBatches.map(b=>b.id));
+
+  // Canonical rule: a pickup may point ONLY to the exact Waste Batch ID that
+  // is stored in its own batchId/wasteBatchId field. Never guess a batch from
+  // partner name/type, because one partner can handle multiple batches.
+  pickups=pickups.filter(p=>{
+    if(!p || !p.id) return false;
+    const id=p.batchId || p.wasteBatchId;
+    if(!id || !validBatchIds.has(id)){
+      // Old/orphan pickup records are not allowed to appear as if they belong
+      // to a different current batch.
+      changed=true;
+      return false;
+    }
+    const b=wasteBatches.find(x=>x.id===id);
+    if(!b) return false;
+
+    if(p.batchId!==b.id){p.batchId=b.id; changed=true;}
+    if(p.wasteBatchId!==b.id){p.wasteBatchId=b.id; changed=true;}
+    if(p.wasteBatchRef!==b.id){p.wasteBatchRef=b.id; changed=true;}
+    if(p.material!==b.material){p.material=b.material; changed=true;}
+    if(p.partnerId!==b.partnerId){p.partnerId=b.partnerId||null; changed=true;}
+    if(p.partnerName!==b.partnerName){p.partnerName=b.partnerName||null; changed=true;}
+    if(b.pickupId!==p.id){
+      // One batch owns one active pickup. If another pickup is already linked,
+      // keep the existing canonical link and hide the duplicate from the list.
+      const other=pickups.find(x=>x!==p && (x.batchId===b.id || x.wasteBatchId===b.id));
+      if(!other || b.pickupId===p.id){ b.pickupId=p.id; changed=true; }
+    }
+    return true;
+  });
+
+  // Remove duplicate pickup records for the same Waste Batch ID, keeping the
+  // most recent record. This prevents old prototype IDs from appearing beside
+  // the canonical batch.
+  const byBatch=new Map();
+  pickups.forEach(p=>{
+    const id=p.batchId || p.wasteBatchId;
+    if(!id) return;
+    const old=byBatch.get(id);
+    if(!old || new Date(p.createdAt||0)>new Date(old.createdAt||0)) byBatch.set(id,p);
+  });
+  const deduped=Array.from(byBatch.values());
+  if(deduped.length!==pickups.length){pickups=deduped; changed=true;}
+
+  // Reassert reverse links from the canonical pickup records.
+  wasteBatches.forEach(b=>{
+    const p=pickups.find(x=>(x.batchId||x.wasteBatchId)===b.id);
+    if(p && b.pickupId!==p.id){b.pickupId=p.id; changed=true;}
+  });
+
+  if(changed){ saveBatches(); savePickups(); }
+}
+
+function journeyIndex(status){
+  const i=JOURNEY_STEPS.indexOf(status);
+  return i<0 ? 0 : i;
+}
+function ensureJourney(batch){
+  if(!batch.journey) batch.journey=[];
+  if(!batch.journey.length){
+    batch.journey.push({status:'Created',at:batch.createdAt||new Date().toISOString(),note:'Batch created'});
+    if(batch.verification && String(batch.verification).startsWith('human_')){
+      batch.journey.push({status:'Human Verified',at:batch.verifiedAt||batch.createdAt||new Date().toISOString(),note:'Human verification recorded'});
+    }
+    if(batch.partnerId){
+      batch.journey.push({status:'Partner Matched',at:batch.matchedAt||new Date().toISOString(),note:`Matched with ${batch.partnerName||'recovery partner'}`});
+    }
+  }
+  return batch.journey;
+}
+function currentJourneyStatus(batch){ return batch.journey && batch.journey.length ? batch.journey[batch.journey.length-1].status : batch.status; }
+
+function renderPickupBatchOptions(){
+  const sel=document.getElementById('pu-batch'); if(!sel) return;
+  const previousId=sel.value;
+  normalizePickupLinks();
+  const eligible=wasteBatches.filter(b=>
+    b && b.id && b.partnerId &&
+    ['Partner Matched','Pickup Scheduled','Pickup Accepted'].includes(currentJourneyStatus(b))
+  );
+  sel.innerHTML='<option value="">Select a waste batch</option>'+eligible.map(b=>`<option value="${esc(b.id)}">${esc(b.id)} — ${esc(b.material)} — ${b.qtyKg} kg${b.partnerName?' · '+esc(b.partnerName):''}</option>`).join('');
+  if(previousId && eligible.some(b=>b.id===previousId)) sel.value=previousId;
+}
+function syncPickupBatch(){
+  const id=document.getElementById('pu-batch')?.value;
+  const b=wasteBatches.find(x=>x.id===id);
+  const partner=document.getElementById('pu-partner');
+  const loc=document.getElementById('pu-location');
+  const type=document.getElementById('pu-type');
+  const banner=document.getElementById('pickup-active-id');
+  if(!b){
+    if(partner) partner.value='';
+    if(banner){ banner.style.display='none'; banner.textContent=''; }
+    return;
+  }
+  if(banner){
+    banner.style.display='block';
+    banner.innerHTML=`🆔 Scheduling pickup for Waste ID: <b>${escapeMatchText(b.id)}</b> — same ID as Batch Register and AI Partner Match.`;
+  }
+  if(partner) partner.value=b.partnerName ? `${b.partnerName} · ${b.partnerType||'recovery partner'} · Batch ${b.id}` : `Partner not assigned · Batch ${b.id}`;
+  if(type){
+    if(b.material==='E-Waste') type.value='ewaste';
+    else if(b.material==='Paper/Cardboard'||b.material==='Mixed Recyclable') type.value='bulk-dry';
+  }
+  if(loc) loc.value=b.source||'';
+}
+function initJourneyForBatch(batch){
+  ensureJourney(batch);
+  if(batch.status==='Partner Matched' && currentJourneyStatus(batch)==='Created'){
+    batch.journey.push({status:'Partner Matched',at:batch.matchedAt||new Date().toISOString(),note:`Matched with ${batch.partnerName||'recovery partner'}`});
+  }
+}
+
+function submitPickup(){
+  const type=document.getElementById('pu-type').value;
+  const date=document.getElementById('pu-date').value;
+  const slot=document.getElementById('pu-slot').value;
+  const location=document.getElementById('pu-location').value.trim();
+  const batchId=document.getElementById('pu-batch')?.value || '';
+  if(!batchId){
+    const fb=document.getElementById('pickup-feedback'); if(fb) fb.textContent='Select the Waste Batch ID created in Waste Batches before scheduling a pickup.';
+    document.getElementById('pu-batch')?.focus(); return;
+  }
+  if(!date||!location){
+    const fb=document.getElementById('pickup-feedback'); if(fb) fb.textContent='Please select a date and pickup location.';
+    if(!location) document.getElementById('pu-location').focus(); else document.getElementById('pu-date').focus(); return;
+  }
+  const chosen=new Date(date+'T00:00:00');
+  if(chosen < new Date(new Date().toDateString())){ document.getElementById('pickup-feedback').textContent='Choose today or a future date.'; return; }
+  const dateStr=chosen.toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+  const batch=wasteBatches.find(b=>b.id===batchId);
+  if(!batch || !batch.partnerId){
+    const fb=document.getElementById('pickup-feedback'); if(fb) fb.textContent='Assign a recovery partner to this batch before scheduling its pickup.'; return;
+  }
+  // Canonical linkage: the pickup receives the exact Waste Batch ID from
+  // the selected batch record. No independent/generated waste ID is created.
+  const pickup={
+    id:'PU-'+Date.now().toString().slice(-7),
+    batchId:batch.id,
+    wasteBatchId:batch.id,
+    wasteBatchRef:batch.id,
+    type:PICKUP_LABELS[type], icon:PICKUP_ICONS[type],
+    material:batch.material,
+    location,date:dateStr,dateValue:date,slot,status:'scheduled',createdAt:new Date().toISOString(),
+    partnerId:batch.partnerId||null,partnerName:batch.partnerName||null
+  };
+  pickups.unshift(pickup); savePickups();
+  if(batch){
+    initJourneyForBatch(batch);
+    if(currentJourneyStatus(batch)==='Partner Matched' || currentJourneyStatus(batch)==='Human Verified' || currentJourneyStatus(batch)==='Created'){
+      batch.status='Pickup Scheduled';
+      batch.pickupId=pickup.id; batch.pickupDate=date; batch.pickupSlot=slot; batch.pickupLocation=location; batch.pickupScheduledAt=new Date().toISOString();
+      batch.journey.push({status:'Pickup Scheduled',at:pickup.createdAt,note:`${dateStr} · ${slot} · ${location}`});
+      saveBatches();
+    }
+  }
+  renderPickups(); renderPickupBatchOptions(); renderJourney(); renderWasteBatches();
+  document.getElementById('pu-date').value=''; document.getElementById('pu-location').value=''; document.getElementById('pu-notes').value='';
+  const fb=document.getElementById('pickup-feedback'); if(fb) fb.textContent=`✓ Pickup ${pickup.id} scheduled for Waste ID ${batch.id}${batch?.partnerName?' with '+batch.partnerName:''}.`;
+}
+
+function reschedulePickup(id){
+  const p=pickups.find(x=>x.id===id); if(!p) return;
+  if(!['scheduled','accepted'].includes(p.status)) return;
+  const batchId=p.batchId || p.wasteBatchId;
+  const b=batchId ? wasteBatches.find(x=>x.id===batchId) : null;
+  if(!b){
+    const fb=document.getElementById('pickup-feedback'); if(fb) fb.textContent='This pickup is missing its linked Waste Batch ID and cannot be rescheduled.';
+    return;
+  }
+  const newDate=window.prompt('New pickup date (YYYY-MM-DD):', p.dateValue || '');
+  if(!newDate) return;
+  const newSlot=window.prompt('New time slot:', p.slot || 'Evening (4–6 PM)');
+  if(!newSlot) return;
+  const chosen=new Date(newDate+'T00:00:00');
+  if(Number.isNaN(chosen.getTime())) return;
+  const oldDate=p.dateValue, oldSlot=p.slot;
+  const newDateStr=chosen.toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+  const at=new Date().toISOString();
+  p.dateValue=newDate;
+  p.date=newDateStr;
+  p.slot=newSlot;
+  p.rescheduledAt=at;
+  p.rescheduleHistory=p.rescheduleHistory||[];
+  p.rescheduleHistory.push({fromDate:oldDate,fromSlot:oldSlot,toDate:newDate,toSlot:newSlot,at});
+  if(b){
+    // Rescheduling updates the SAME pickup and reasserts the SAME canonical
+    // Waste Batch ID; neither a new pickup ID nor a new batch is created.
+    p.batchId=b.id;
+    p.wasteBatchId=b.id;
+    p.wasteBatchRef=b.id;
+    p.material=b.material;
+    p.partnerId=b.partnerId||p.partnerId||null;
+    p.partnerName=b.partnerName||p.partnerName||null;
+    b.pickupId=p.id;
+    initJourneyForBatch(b);
+    b.pickupDate=newDate;
+    b.pickupSlot=newSlot;
+    b.lastUpdatedAt=at;
+    b.journey.push({status:'Pickup Scheduled',at,note:`Pickup rescheduled: ${newDateStr} · ${newSlot}`});
+    saveBatches();
+  }
+  savePickups();
+  renderPickups(); renderJourney(); renderWasteBatches(); renderHomeImpact(); renderDashboard();
+}
+
+function pickupAction(id,action){
+  const p=pickups.find(x=>x.id===id); if(!p) return;
+  const batchId=p.batchId || p.wasteBatchId;
+  const b=batchId ? wasteBatches.find(x=>x.id===batchId) : null;
+  if(!b){ return; }
+  if(action==='accept'){
+    p.status='accepted'; p.acceptedAt=new Date().toISOString();
+    if(b){ initJourneyForBatch(b); b.status='Pickup Accepted'; b.journey.push({status:'Pickup Accepted',at:p.acceptedAt,note:`Pickup accepted by ${b.partnerName||'assigned partner'}`}); saveBatches(); }
+  }
+  if(action==='collect'){
+    p.status='collected'; p.collectedAt=new Date().toISOString();
+    if(b){ initJourneyForBatch(b); b.status='Collected'; b.journey.push({status:'Collected',at:p.collectedAt,note:'Collection marked complete in prototype'}); saveBatches(); }
+  }
+  savePickups(); renderPickups(); renderJourney(); renderWasteBatches();
+}
+function renderPickups(){
+  const list=document.getElementById('pickup-list'); if(!list) return;
+  renderPickupBatchOptions();
+  if(!pickups.length){list.innerHTML='<p style="font-size:13px;color:var(--text-faint);">No pickups requested yet. Schedule one for a matched batch to activate the recovery journey.</p>';return;}
+  list.innerHTML=pickups.map(p=>{
+    const batchId=p.batchId || p.wasteBatchId;
+    const b=batchId?wasteBatches.find(x=>x.id===batchId):null;
+    if(!b) return '';
+    let action='';
+    if(p.status==='scheduled') action=`<button class="btn-secondary" onclick="reschedulePickup('${p.id}')">↻ Reschedule</button>${user.role!=='generator' ? ` <button class="btn-secondary" onclick="pickupAction('${p.id}','accept')">✓ Accept pickup</button>` : ''}`;
+    if(p.status==='accepted' && user.role!=='generator') action=`<button class="btn-secondary" onclick="pickupAction('${p.id}','collect')">♻️ Mark collected</button>`;
+    const canonicalId=b ? b.id : (p.batchId || p.wasteBatchId || '—');
+    return `<div class="pickup-request" style="margin-bottom:10px;align-items:center;">\n      <div class="pr-icon">${p.icon}</div><div style="flex:1"><h4>${esc(p.type)} · ${esc(p.id)}</h4><p><b>Waste Batch ${esc(canonicalId)}</b> · ${esc(p.location)} · ${esc(p.date)}, ${esc(p.slot)}</p>${p.partnerName?`<p style="color:var(--text-faint)">Partner: ${esc(p.partnerName)}</p>`:''}${p.rescheduleHistory?.length?`<p style="color:var(--amber);font-size:11px;">↻ Rescheduled ${p.rescheduleHistory.length} time${p.rescheduleHistory.length>1?'s':''} — same Pickup ID, same Waste Batch ID</p>`:''}</div><div class="status-pill status-${p.status}">${p.status==='scheduled'?'Scheduled':p.status==='accepted'?'Accepted':'Collected'}</div>${action}</div>`;
+  }).join('');
+}
+
+function renderJourney(){
+  const sel=document.getElementById('journey-batch-select'), box=document.getElementById('journey-detail'); if(!sel||!box) return;
+  const batches=wasteBatches.filter(b=>b.journey || b.partnerId || ['Pickup Scheduled','Pickup Accepted','Collected','Sent to Recycler','Recovered'].includes(b.status));
+  sel.innerHTML=batches.length?batches.map(b=>`<option value="${esc(b.id)}">${esc(b.id)} — ${esc(b.material)} — ${b.qtyKg} kg</option>`).join(''):'<option value="">No active recovery journeys yet</option>';
+  const id=sel.value||batches[0]?.id; if(id) sel.value=id;
+  const b=batches.find(x=>x.id===id);
+  if(!b){box.innerHTML='<div class="batch-empty">Assign a partner and schedule a pickup to start a traceable recovery journey.</div>';return;}
+  initJourneyForBatch(b); saveBatches();
+  const current=currentJourneyStatus(b), idx=journeyIndex(current);
+  const pickup=pickups.find(p=>p.id===b.pickupId);
+  const actions=[];
+  if(current==='Pickup Scheduled' && user.role!=='generator') actions.push(`<button class="btn-confirm" onclick="advanceBatchJourney('${b.id}','Pickup Accepted')">✓ Accept pickup</button>`);
+  if(current==='Pickup Accepted' && user.role!=='generator') actions.push(`<button class="btn-confirm" onclick="advanceBatchJourney('${b.id}','Collected')">♻️ Mark collected</button>`);
+  if(current==='Collected' && (user.role==='recycler'||user.role==='picker')) actions.push(`<button class="btn-confirm" onclick="advanceBatchJourney('${b.id}','Sent to Recycler')">🏭 Send to recycler</button>`);
+  if(current==='Sent to Recycler' && user.role==='recycler') actions.push(`<button class="btn-confirm" onclick="advanceBatchJourney('${b.id}','Recovered')">✅ Verify recovered material</button>`);
+  box.innerHTML=`<div style="display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:16px;"><div><h3 style="margin:0">${esc(b.id)} · ${esc(b.material)}</h3><p style="font-size:13px;color:var(--text-dim);margin:5px 0">${b.qtyKg} kg · ${esc(b.source)}${b.partnerName?' · '+esc(b.partnerName):''}</p></div><span class="batch-status">${esc(current)}</span></div>
+    <div class="journey-track">${JOURNEY_STEPS.map((step,i)=>`<div class="journey-step ${i<=idx?'done':''} ${i===idx?'current':''}"><div class="journey-dot">${i<=idx?'✓':i+1}</div><div><strong>${step}</strong><small>${b.journey.find(e=>e.status===step)?.at?new Date(b.journey.find(e=>e.status===step).at).toLocaleString():'Waiting'}</small></div></div>`).join('')}</div>
+    ${pickup?`<div class="ai-card" style="margin-top:14px"><b>Pickup ${esc(pickup.id)}</b><div class="batch-meta"><span>📦 Waste Batch ${esc(b.id)}</span><span>📅 ${esc(pickup.date)}</span><span>🕐 ${esc(pickup.slot)}</span><span>📍 ${esc(pickup.location)}</span></div></div>`:''}
+    <div class="ai-actions" style="margin-top:14px">${actions.join('')||'<span style="font-size:13px;color:var(--text-faint)">No action available for the current role/status. Switch to the appropriate prototype role to simulate the next handoff.</span>'}</div>
+    <p style="font-size:11px;color:var(--text-faint);margin-top:14px">Prototype note: pickup acceptance, collection and recovery are simulated workflow events; no real vehicle, partner or logistics API is connected.</p>`;
+}
+function advanceBatchJourney(batchId,next){
+  const b=wasteBatches.find(x=>x.id===batchId); if(!b) return;
+  const current=currentJourneyStatus(b), expected=JOURNEY_STEPS[journeyIndex(current)+1];
+  if(expected!==next) return;
+  const at=new Date().toISOString();
+  b.journey.push({status:next,at,note:'Prototype workflow event'}); b.status=next; b.lastUpdatedAt=at;
+  if(next==='Recovered'){
+    b.recoveredKg = Number(b.recoveredKg ?? b.qtyKg ?? 0);
+    b.recoveryEfficiency = b.qtyKg ? +(b.recoveredKg / b.qtyKg * 100).toFixed(1) : 0;
+  }
+  if(next==='Pickup Accepted'&&b.pickupId){const p=pickups.find(x=>x.id===b.pickupId);if(p){p.status='accepted';p.acceptedAt=at;savePickups();}}
+  if(next==='Collected'&&b.pickupId){const p=pickups.find(x=>x.id===b.pickupId);if(p){p.status='collected';p.collectedAt=at;savePickups();}}
+  saveBatches(); renderJourney(); renderPickups(); renderWasteBatches(); renderPartnerMatching(); renderDashboard(); renderHomeImpact();
+}
+
+/* ---------------- Sustainability Reports ---------------- */
+// kg diverted per month, broken down by category (illustrative campus data)
+const monthlyDiverted = [
+  { m:"Apr", wet:78,  recyclable:64, dry:40, ewaste:18, hazardous:10 },
+  { m:"May", wet:95,  recyclable:80, dry:48, ewaste:22, hazardous:20 },
+  { m:"Jun", wet:60,  recyclable:55, dry:35, ewaste:15, hazardous:15 },
+  { m:"Jul", wet:110, recyclable:90, dry:52, ewaste:28, hazardous:20 },
+  { m:"Aug", wet:125, recyclable:100,dry:58, ewaste:32, hazardous:25 },
+  { m:"Sep", wet:42,  recyclable:38, dry:22, ewaste:10, hazardous:8 }
+];
+
+// kg CO2e avoided per kg diverted, by category — based on published life-cycle
+// estimates (EPA WARM-style figures). Organics avoid landfill methane;
+// recyclables avoid virgin-material extraction/processing.
+const CO2_FACTORS = {
+  wet:        0.75,  // composted vs. landfilled — avoids methane
+  recyclable: 1.60,  // blended paper/plastic/glass/metal recycling
+  ewaste:     2.50,  // metal-rich, high avoided-impact per kg
+  dry:        0.10,  // general/non-recyclable — mostly just avoided landfill handling
+  hazardous:  0.20   // proper disposal mainly prevents contamination, minor CO2e credit
+};
+
+function categoryTotals(){
+  const totals = { wet:0, recyclable:0, dry:0, ewaste:0, hazardous:0 };
+  monthlyDiverted.forEach(m => {
+    Object.keys(totals).forEach(k => totals[k] += m[k]);
+  });
+  return totals;
+}
+
+function renderReports(){
+  const totals = categoryTotals();
+  const totalDiverted = Object.values(totals).reduce((a,b) => a+b, 0);
+  const co2ByCategory = {};
+  let totalCo2 = 0;
+  Object.keys(totals).forEach(k => {
+    co2ByCategory[k] = totals[k] * CO2_FACTORS[k];
+    totalCo2 += co2ByCategory[k];
+  });
+
+  document.getElementById('rep-diverted').textContent = Math.round(totalDiverted).toLocaleString();
+  document.getElementById('rep-co2').textContent = Math.round(totalCo2).toLocaleString();
+  document.getElementById('rep-compost').textContent = Math.round(totals.wet).toLocaleString();
+  document.getElementById('rep-recycled').textContent = Math.round(totals.recyclable).toLocaleString();
+
+  // Monthly total bars
+  const monthTotals = monthlyDiverted.map(m => ({ m: m.m, kg: m.wet+m.recyclable+m.dry+m.ewaste+m.hazardous }));
+  const max = Math.max(...monthTotals.map(m => m.kg));
+  const barsEl = document.getElementById('month-bars');
+  barsEl.innerHTML = '';
+  monthTotals.forEach(m => {
+    const h = Math.round((m.kg/max) * 100);
+    barsEl.innerHTML += `<div class="month-bar-wrap">
+      <div class="month-bar" style="height:${h}%;" title="${m.kg} kg"></div>
+      <div class="ml">${m.m}</div>
+    </div>`;
+  });
+
+  // This month's category share (from items you've logged this session)
+  const counts = {};
+  Object.keys(CATEGORIES).forEach(k => counts[k] = 0);
+  log.forEach(e => {
+    const key = Object.keys(CATEGORIES).find(k => CATEGORIES[k].label === e.category);
+    if(key) counts[key]++;
+  });
+  const catMax = Math.max(1, ...Object.values(counts));
+  let repBarsHtml = '';
+  Object.keys(CATEGORIES).forEach(k => {
+    const c = CATEGORIES[k];
+    const pct = Math.round((counts[k]/catMax)*100);
+    repBarsHtml += `<div style="display:flex; align-items:center; gap:12px; margin-bottom:10px;">
+      <div style="width:110px; font-size:13px; color:var(--text-dim);">${c.icon} ${c.label}</div>
+      <div style="flex:1; background:var(--surface-2); border-radius:4px; height:10px; overflow:hidden;">
+        <div style="width:${pct}%; background:var(--leaf); height:100%;"></div>
+      </div>
+      <div style="width:22px; text-align:right; font-size:12px; color:var(--text-faint);">${counts[k]}</div>
+    </div>`;
+  });
+  document.getElementById('rep-bars').innerHTML = repBarsHtml || '<p style="font-size:12.5px; color:var(--text-faint);">Log a few items to see this month\'s category breakdown.</p>';
+
+  // CO2e saved by category (the new breakdown)
+  const co2Max = Math.max(1, ...Object.values(co2ByCategory));
+  let co2BarsHtml = '';
+  Object.keys(CATEGORIES).forEach(k => {
+    const c = CATEGORIES[k];
+    const kgVal = Math.round(co2ByCategory[k]);
+    const pct = Math.round((co2ByCategory[k]/co2Max)*100);
+    co2BarsHtml += `<div style="margin-bottom:14px;">
+      <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:6px;">
+        <span style="color:var(--text-dim);">${c.icon} ${c.label} <span class="mono" style="color:var(--text-faint); font-size:11px;">(${CO2_FACTORS[k]} kg CO₂e / kg)</span></span>
+        <span style="color:var(--leaf); font-weight:600;">${kgVal} kg CO₂e</span>
+      </div>
+      <div style="background:var(--surface-2); border-radius:4px; height:8px; overflow:hidden;">
+        <div style="width:${pct}%; background:var(--leaf); height:100%;"></div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('rep-co2-bars').innerHTML = co2BarsHtml;
+}
+
+function exportReport(){
+  const totals = categoryTotals();
+  const totalDiverted = Object.values(totals).reduce((a,b) => a+b, 0);
+  let totalCo2 = 0;
+  const co2Lines = Object.keys(totals).map(k => {
+    const co2 = totals[k] * CO2_FACTORS[k];
+    totalCo2 += co2;
+    return '  ' + CATEGORIES[k].label + ': ' + Math.round(totals[k]) + ' kg diverted -> ' + Math.round(co2) + ' kg CO2e saved (' + CO2_FACTORS[k] + ' kg CO2e/kg)';
+  });
+
+  const lines = [
+    'SortMate Sustainability Report',
+    'Generated: ' + new Date().toLocaleDateString(),
+    'Hostel / Department: ' + user.hostel,
+    '',
+    'Waste diverted from landfill (6 months): ' + Math.round(totalDiverted) + ' kg',
+    'Estimated CO2e avoided: ' + Math.round(totalCo2) + ' kg',
+    '',
+    'CO2e saved by category:',
+    ...co2Lines,
+    '',
+    'Monthly totals (kg diverted):',
+    ...monthlyDiverted.map(m => '  ' + m.m + ': ' + (m.wet+m.recyclable+m.dry+m.ewaste+m.hazardous) + ' kg'),
+    '',
+    'Your personal items logged this session: ' + log.length,
+    'Your points this session: ' + points,
+    '',
+    'Note: CO2e factors are illustrative estimates based on published life-cycle',
+    'studies (EPA WARM-style figures) and vary by region and processing method.'
+  ];
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'sortmate-sustainability-report.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ---------------- Waste Picker: Log Pickup / Collect ---------------- */
+let collections = []; // {id, grade, weightKg, source, area, time, earnings}
+let pkPendingImageData = null;
+let pkPendingGrade = null;
+let pkPendingConfidence = null;
+
+function populateGradeSelects(){
+  const sel = document.getElementById('rc-grade');
+  if(sel && sel.options.length === 0){
+    sel.innerHTML = Object.keys(PLASTIC_GRADES).map(k => `<option value="${k}">${PLASTIC_GRADES[k].icon} ${PLASTIC_GRADES[k].label}</option>`).join('');
+  }
+}
+
+function handleCollectPhoto(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    document.getElementById('pk-preview-img').src = ev.target.result;
+    document.getElementById('pk-result').style.display = 'block';
+    document.getElementById('pk-pre-box').style.display = 'block';
+    document.getElementById('pk-post-box').style.display = 'none';
+    const btn = document.getElementById('pk-analyze-btn');
+    btn.disabled = false;
+    btn.classList.remove('analyzing');
+    btn.innerHTML = '✨ Scan plastic grade';
+    pkPendingImageData = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function runGradeAnalysis(){
+  if(!pkPendingImageData) return;
+  const btn = document.getElementById('pk-analyze-btn');
+  btn.disabled = true;
+  btn.classList.add('analyzing');
+  btn.innerHTML = '<span class="spin"></span>Scanning…';
+  setTimeout(() => classifyPlasticGrade(pkPendingImageData), 700);
+}
+
+function classifyPlasticGrade(dataUrl){
+  // Illustrative heuristic only (same caveat as the main waste classifier):
+  // buckets center-cropped hue into one of 8 plastic grades. A real deployment
+  // needs a model trained on labeled plastic imagery plus resin-code OCR.
+  const img = new Image();
+  img.onload = function(){
+    const canvas = document.createElement('canvas');
+    canvas.width = 30; canvas.height = 30;
+    const ctx = canvas.getContext('2d');
+    const sx = img.width * 0.225, sy = img.height * 0.225;
+    const sw = img.width * 0.55, sh = img.height * 0.55;
+    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, 30, 30);
+    let r=0,g=0,b=0,count=0;
+    try{
+      const data = ctx.getImageData(0,0,30,30).data;
+      for(let i=0;i<data.length;i+=4){ r+=data[i]; g+=data[i+1]; b+=data[i+2]; count++; }
+      r/=count; g/=count; b/=count;
+    }catch(err){ r=180;g=180;b=180; }
+
+    const { h, s, l } = rgbToHsl(r, g, b);
+    let grade;
+    if(l > 0.78 && s < 0.14){ grade = 'pet'; }               // clear/near-transparent — typical PET bottle
+    else { grade = GRADE_HUE_ORDER[Math.floor(h/45) % 8]; }
+
+    const confidence = 70 + Math.floor(Math.random()*22);
+    showGradeResult(grade, confidence);
+  };
+  img.src = dataUrl;
+}
+
+function showGradeResult(grade, confidence){
+  pkPendingGrade = grade;
+  pkPendingConfidence = confidence;
+  const g = PLASTIC_GRADES[grade];
+  const tag = document.getElementById('pk-grade-tag');
+  tag.className = 'category-tag tag-recyclable';
+  tag.textContent = g.icon + ' ' + g.label;
+  document.getElementById('pk-conf-fill').style.width = confidence + '%';
+  document.getElementById('pk-conf-pct').textContent = confidence + '%';
+  document.getElementById('pk-rate-display').value = '₹' + g.rate + ' / kg';
+
+  const chipsEl = document.getElementById('pk-correction-chips');
+  chipsEl.innerHTML = Object.keys(PLASTIC_GRADES).map(k =>
+    `<div class="chip${k===grade?' selected':''}" data-grade="${k}">${PLASTIC_GRADES[k].label}</div>`
+  ).join('');
+  chipsEl.querySelectorAll('.chip').forEach(chip => {
+    chip.onclick = () => {
+      pkPendingGrade = chip.dataset.grade;
+      chipsEl.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
+      const ng = PLASTIC_GRADES[pkPendingGrade];
+      tag.textContent = ng.icon + ' ' + ng.label;
+      document.getElementById('pk-rate-display').value = '₹' + ng.rate + ' / kg';
+    };
+  });
+
+  document.getElementById('pk-pre-box').style.display = 'none';
+  document.getElementById('pk-post-box').style.display = 'block';
+}
+
+function submitCollection(){
+  const weightKg = parseFloat(document.getElementById('pk-weight').value);
+  if(!weightKg || weightKg <= 0){ document.getElementById('pk-weight').focus(); return; }
+  const source = document.getElementById('pk-source').value.trim() || 'Unlisted source';
+  const area = document.getElementById('pk-area').value.trim() || '—';
+  const g = PLASTIC_GRADES[pkPendingGrade];
+  const earnings = Math.round(weightKg * g.rate);
+  const id = 'SM-P-' + String(collections.length + 1).padStart(3, '0');
+  const now = new Date();
+
+  collections.unshift({
+    id, grade: pkPendingGrade, gradeLabel: g.label, icon: g.icon,
+    weightKg, source, area, earnings, time: now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+  });
+  renderCollections();
+  resetCollect();
+}
+
+function resetCollect(){
+  document.getElementById('pk-result').style.display = 'none';
+  document.getElementById('pk-photo-input').value = '';
+  document.getElementById('pk-weight').value = '';
+  document.getElementById('pk-source').value = '';
+  document.getElementById('pk-area').value = '';
+  pkPendingImageData = null;
+  pkPendingGrade = null;
+}
+
+function renderCollections(){
+  const totalKg = collections.reduce((s,c) => s + c.weightKg, 0);
+  const totalEarn = collections.reduce((s,c) => s + c.earnings, 0);
+  document.getElementById('pk-total-kg').textContent = totalKg.toFixed(1) + ' kg';
+  document.getElementById('pk-total-earn').textContent = '₹' + totalEarn.toLocaleString();
+  document.getElementById('pk-total-count').textContent = collections.length;
+  document.getElementById('pk-avg-rate').textContent = totalKg > 0 ? '₹' + Math.round(totalEarn/totalKg) + '/kg' : '₹0/kg';
+
+  const body = document.getElementById('pk-log-body');
+  if(collections.length === 0){
+    body.innerHTML = '<tr><td colspan="5" style="color:var(--text-faint);">No collections logged yet.</td></tr>';
+    return;
+  }
+  body.innerHTML = collections.slice(0,10).map(c =>
+    `<tr><td class="mono">${c.id}</td><td>${c.icon} ${c.gradeLabel}</td><td>${c.weightKg} kg</td><td>${c.source}</td><td class="pt">₹${c.earnings}</td></tr>`
+  ).join('');
+}
+
+/* ---------------- Recycler: Material Recovery ---------------- */
+let recoveryBatches = []; // {id, grade, inputKg, outputKg, effPct, purityPct, time}
+
+function processBatch(){
+  const grade = document.getElementById('rc-grade').value;
+  const inputKg = parseFloat(document.getElementById('rc-input-weight').value);
+  const source = document.getElementById('rc-source').value.trim() || 'Unlisted source';
+  if(!inputKg || inputKg <= 0){ document.getElementById('rc-input-weight').focus(); return; }
+
+  const g = PLASTIC_GRADES[grade];
+  const jitter = (Math.random() * 10) - 5; // +/- 5 points of realistic variance
+  const effPct = Math.max(5, Math.min(97, Math.round(g.recoveryEff*100 + jitter)));
+  const outputKg = +(inputKg * (effPct/100)).toFixed(1);
+  const purityPct = Math.round(85 + Math.random()*13);
+  const id = 'SM-R-' + String(recoveryBatches.length + 1).padStart(3, '0');
+  const now = new Date();
+
+  recoveryBatches.unshift({
+    id, grade, gradeLabel: g.label, icon: g.icon, inputKg, outputKg, effPct, purityPct, source,
+    time: now.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})
+  });
+  document.getElementById('rc-input-weight').value = '';
+  document.getElementById('rc-source').value = '';
+  renderRecovery();
+}
+
+function renderRecovery(){
+  const totalIn = recoveryBatches.reduce((s,b) => s + b.inputKg, 0);
+  const totalOut = recoveryBatches.reduce((s,b) => s + b.outputKg, 0);
+  const avgEff = recoveryBatches.length ? Math.round(recoveryBatches.reduce((s,b) => s + b.effPct, 0) / recoveryBatches.length) : 0;
+
+  document.getElementById('rc-input-kg').textContent = Math.round(totalIn) + ' kg';
+  document.getElementById('rc-output-kg').textContent = Math.round(totalOut) + ' kg';
+  document.getElementById('rc-avg-eff').textContent = avgEff + '%';
+  document.getElementById('rc-batch-count').textContent = recoveryBatches.length;
+
+  const body = document.getElementById('rc-log-body');
+  if(recoveryBatches.length === 0){
+    body.innerHTML = '<tr><td colspan="7" style="color:var(--text-faint);">No batches processed yet.</td></tr>';
+    return;
+  }
+  body.innerHTML = recoveryBatches.slice(0,10).map(b =>
+    `<tr><td class="mono">${b.id}</td><td>${b.icon} ${b.gradeLabel}</td><td>${b.inputKg} kg</td><td class="pt">${b.outputKg} kg</td><td>${b.effPct}%</td><td>${b.purityPct}%</td>
+      <td><button class="btn-secondary" style="padding:5px 10px; font-size:11px;" onclick="exportCertificate('${b.id}')">Certificate</button></td></tr>`
+  ).join('');
+}
+
+function exportCertificate(batchId){
+  const b = recoveryBatches.find(x => x.id === batchId);
+  if(!b) return;
+  const lines = [
+    'SortMate — Verified Material Recovery Certificate',
+    'Batch ID: ' + b.id,
+    'Issued: ' + new Date().toLocaleString(),
+    'Facility: ' + user.name + ' (' + user.hostel + ')',
+    '',
+    'Material grade: ' + b.gradeLabel,
+    'Input weight: ' + b.inputKg + ' kg',
+    'Recovered output: ' + b.outputKg + ' kg',
+    'Recovery efficiency: ' + b.effPct + '%',
+    'Output purity: ' + b.purityPct + '%',
+    'Source: ' + (b.source || 'Unlisted'),
+    '',
+    'This certificate is generated from platform-logged, timestamped batch data.',
+    'Demo prototype — not a substitute for a third-party audited certificate.'
+  ];
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'sortmate-certificate-' + b.id + '.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ---------------- Recovery Ledger (shared chain-of-custody view) ---------------- */
+function renderLedger(){
+  const body = document.getElementById('ledger-body');
+  if(!body) return;
+  const entries = [
+    ...collections.map(c => ({ id:c.id, stage:'Picker collection', grade:c.gradeLabel, icon:c.icon, weight:c.weightKg+' kg', actor:c.source, time:c.time })),
+    ...recoveryBatches.map(b => ({ id:b.id, stage:'Recycler processing', grade:b.gradeLabel, icon:b.icon, weight:b.inputKg+' → '+b.outputKg+' kg', actor:b.source||'—', time:b.time }))
+  ];
+  if(entries.length === 0){
+    body.innerHTML = '<tr><td colspan="6" style="color:var(--text-faint);">No chain-of-custody entries yet — log a pickup or process a batch to populate the ledger.</td></tr>';
+    return;
+  }
+  body.innerHTML = entries.map(e =>
+    `<tr><td class="mono">${e.id}</td><td>${e.stage}</td><td>${e.icon} ${e.grade}</td><td>${e.weight}</td><td>${e.actor}</td><td>${e.time}</td></tr>`
+  ).join('');
+}
+
+/* ---------------- Brand: EPR + Sustainability Reporting ---------------- */
+// Demo annual EPR targets (kg). These are configurable prototype values, not legal targets.
+const EPR_TARGETS = { pet:5000, hdpe:3000, pp:2500, ldpe:2000, pvc:1000, ps:800, mlp:1500, other:500 };
+// Demo network baseline makes the prototype dashboard usable before a real partner network is connected.
+const EPR_BASELINE = { pet:3200, hdpe:1800, pp:1400, ldpe:900, pvc:300, ps:250, mlp:400, other:150 };
+
+function getEPRData(){
+  const recoveredByGrade = {};
+  Object.keys(PLASTIC_GRADES).forEach(k => recoveredByGrade[k] = EPR_BASELINE[k] || 0);
+  recoveryBatches.forEach(b => { recoveredByGrade[b.grade] = (recoveredByGrade[b.grade]||0) + Number(b.outputKg||0); });
+
+  let totalRecovered=0,totalTarget=0,onTrack=0;
+  Object.keys(PLASTIC_GRADES).forEach(k=>{
+    totalRecovered += recoveredByGrade[k]||0;
+    totalTarget += EPR_TARGETS[k]||0;
+    if((recoveredByGrade[k]||0) >= (EPR_TARGETS[k]||0)) onTrack++;
+  });
+
+  const recoveredSession = recoveryBatches.reduce((s,b)=>s+Number(b.outputKg||0),0);
+  const inputSession = recoveryBatches.reduce((s,b)=>s+Number(b.inputKg||0),0);
+  const yieldPct = inputSession > 0 ? Math.round((recoveredSession/inputSession)*100) : 0;
+  const complete = recoveryBatches.length ? Math.round((recoveryBatches.filter(b=>b.status==='Recovered').length/recoveryBatches.length)*100) : 0;
+  const co2 = typeof estimateCO2 === 'function' ? Number(estimateCO2(recoveryBatches)) || 0 : recoveredSession * 1.8;
+  return { recoveredByGrade,totalRecovered,totalTarget,onTrack,recoveredSession,inputSession,yieldPct,complete,co2 };
+}
+
+function renderEPR(){
+  const d = getEPRData();
+  const overallPct = d.totalTarget ? Math.round((d.totalRecovered/d.totalTarget)*100) : 0;
+  document.getElementById('epr-total-recovered').textContent = Math.round(d.totalRecovered).toLocaleString() + ' kg';
+  document.getElementById('epr-total-pct').textContent = overallPct + '%';
+  document.getElementById('epr-batch-count').textContent = recoveryBatches.length;
+  document.getElementById('epr-co2').textContent = d.co2.toFixed(1) + ' kg';
+  document.getElementById('epr-input-kg').textContent = d.inputSession.toFixed(1) + ' kg';
+  document.getElementById('epr-output-rate').textContent = d.yieldPct + '%';
+  document.getElementById('epr-journey-complete').textContent = d.complete + '%';
+
+  const barsEl = document.getElementById('epr-bars');
+  if(!barsEl) return;
+  barsEl.innerHTML = Object.keys(PLASTIC_GRADES).map(k => {
+    const g = PLASTIC_GRADES[k];
+    const pct = Math.min(100, Math.round(((d.recoveredByGrade[k]||0)/(EPR_TARGETS[k]||1))*100));
+    return `<div style="margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px;gap:10px;">
+        <span style="color:var(--text-dim);">${g.icon} ${g.label}</span>
+        <span style="color:var(--leaf);font-weight:600;">${Math.round(d.recoveredByGrade[k]||0).toLocaleString()} / ${EPR_TARGETS[k].toLocaleString()} kg (${pct}%)</span>
+      </div>
+      <div style="background:var(--surface-2);border-radius:4px;height:8px;overflow:hidden;"><div style="width:${pct}%;background:var(--leaf);height:100%;"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function buildEPRReport(){
+  const d = getEPRData();
+  const org = (document.getElementById('epr-org-name')?.value || 'SortMate Demo Brand').trim();
+  const period = document.getElementById('epr-period')?.value || 'FY 2026–27';
+  const overallPct = d.totalTarget ? Math.round((d.totalRecovered/d.totalTarget)*100) : 0;
+  const lines = [
+    'SORTMATE — EPR & SUSTAINABILITY REPORT',
+    '=======================================',
+    'Organization: ' + org,
+    'Reporting period: ' + period,
+    'Generated: ' + new Date().toLocaleString(),
+    '',
+    '1. VERIFIED RECOVERY',
+    'Total tracked recovered material: ' + Math.round(d.totalRecovered) + ' kg',
+    'EPR target progress: ' + overallPct + '%',
+    'Traceable recovery batches: ' + recoveryBatches.length,
+    '',
+    '2. MATERIAL BREAKDOWN',
+    ...Object.keys(PLASTIC_GRADES).map(k => {
+      const g=PLASTIC_GRADES[k];
+      return g.label + ': ' + Math.round(d.recoveredByGrade[k]||0) + ' kg / ' + EPR_TARGETS[k] + ' kg target';
+    }),
+    '',
+    '3. JOURNEY & RECOVERY METRICS',
+    'Material collected in processed batches: ' + d.inputSession.toFixed(1) + ' kg',
+    'Material recovered from processed batches: ' + d.recoveredSession.toFixed(1) + ' kg',
+    'Recovery yield: ' + d.yieldPct + '%',
+    'Journeys reaching recovered status: ' + d.complete + '%',
+    'Estimated CO2e avoided: ' + d.co2.toFixed(1) + ' kg CO2e',
+    '',
+    '4. TRACEABILITY',
+    ...(recoveryBatches.length ? recoveryBatches.map(b => 'Batch ' + b.id + ' | ' + (b.gradeLabel||b.grade||'Material') + ' | ' + Number(b.outputKg||0).toFixed(1) + ' kg | ' + (b.status||'—') + ' | Partner: ' + (b.source||'—')) : ['No recovery batches recorded in this session.']),
+    '',
+    'DATA NOTE',
+    'This prototype combines demo network baseline values with live session activity. EPR targets are configurable demo values.',
+    'CO2e is an estimate and should be replaced with an organization-approved methodology and emission factors before formal disclosure.',
+    'This report is a prototype sustainability summary and is NOT a filing-ready CPCB/EPR certificate or legal compliance submission.'
+  ];
+  return {lines, text:lines.join('\n')};
+}
+
+function previewEPRReport(){
+  const box=document.getElementById('epr-report-preview');
+  if(!box) return;
+  box.style.display='block';
+  box.className='epr-preview';
+  box.textContent=buildEPRReport().text;
+}
+
+function exportEPRReport(){
+  const report=buildEPRReport();
+  const blob=new Blob([report.text],{type:'text/plain'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;
+  a.download='sortmate-epr-sustainability-report.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ---------------- Profile ---------------- */
+function saveProfile(){
+  user.name = document.getElementById('profile-name').value.trim() || user.name;
+  user.hostel = document.getElementById('profile-hostel').value;
+  document.getElementById('sb-name').textContent = user.name;
+  document.getElementById('sb-hostel').textContent = user.hostel + ' · ' + ROLE_LABELS[user.role];
+  document.getElementById('sb-avatar').textContent = user.name.charAt(0).toUpperCase();
+  renderLeaderboard();
+}
+
+/* ---------------- Init ---------------- */
+normalizeWasteBatches();
+normalizePickupLinks();
+renderRecentLog();
+renderWasteBatches();
+renderPartnerMatching();
+const latestVerifiedLog = JSON.parse(localStorage.getItem('sortmate_latest_verified_log') || 'null');
+if(latestVerifiedLog) prepareVerifiedBatchFromLog(latestVerifiedLog);
+renderPickupBatchOptions();
+renderPickups();
+</script>
+</body>
+</html>
